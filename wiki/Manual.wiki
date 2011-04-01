@@ -1,5 +1,5 @@
 =dttools 1.2 Manual=
-This page offers a quick overview on how to use the tools included in this package. All the tools are driven by configuration files, so the general tool usage syntax is `<toolname> <config-file>`
+This page offers a quick overview on how to use the tools included in this package. All the tools are driven by configuration files, so the general tool usage syntax is '<toolname> <config-file>'
 The supported configuration parameters for each tool are presented in the respective sections. The /data folder in the tool distribution contains several configuration files used for processing the 2009 bonney deltaT data. They serve as an example on how to use most of the toolset functionalities
 
 These configuration files follow a simple naming convention
