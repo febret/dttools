@@ -90,56 +90,56 @@ The tool accepts a single configuration file as input: the syntax is `dtrt <conf
 dtmerge is used to merge data into a single point cloud, performing data gridding and noise reduction
 
 ===SUPPORTED PARAMETERS===
-* `inputFiles (int)`: Specifies the number of input files
-* `inputFile[0..{inputFiles-1}] (string)`: Specifies the path to an input file
-* `inputFormat (string)`: Specifies the input file format.
+ * `inputFiles (int)`: Specifies the number of input files
+ * `inputFile[0..{inputFiles-1}] (string)`: Specifies the path to an input file
+ * `inputFormat (string)`: Specifies the input file format.
 	# Supported values are:
 	# CSVPoints
 	# XYZBinaryPointsWithNormals
 	# XYZPointsWithNormals
 	Additional information about the formats is presented at the end of this document.
-* `outputFile (string)`: Specifies the name of the output file
-* `outputFormat (string)`:
+ * `outputFile (string)`: Specifies the name of the output file
+ * `outputFormat (string)`:
 	# Specifies the output file format.
 	# Supported values are:
 	# CSVPoints
 	# XYZBinaryPointsWithNormals
 	# XYZPointsWithNormals
 	Additional information about the formats is presented at the end of this document.
-* `clipBoundsMin[0..2] (float)`: Specifies the x,y,z coordinates of the the lower vertex of a clipping box for the data. Only points inside the box will be output.
-* `clipBoundsMax[0..2] (float)`: Specifies the x,y,z coordinates of the the upper vertex of a clipping box for the data. Only points inside the box will be output.
-* `voxelSize (float)`: Specifies the voxel size used to grid, average and filter datapoints (in meters). 
-* `qualityThreshold (int)`: Specifies the number of points inside a voxel needed to consider that voxel data instead of noise.
-* `inputBufferSize (int) [default: 128000]`: Specifies the size of the input buffer used for reading the point cloud (in kilobytes).
-* `preallocBins (int) [default: 0]`: Specifies how many bin entries are preallocated for the binning grid. Preallocation can be used to avoid out-of-memory issues, preventing reallocations of the bin vector during point gridding.
+ * `clipBoundsMin[0..2] (float)`: Specifies the x,y,z coordinates of the the lower vertex of a clipping box for the data. Only points inside the box will be output.
+ * `clipBoundsMax[0..2] (float)`: Specifies the x,y,z coordinates of the the upper vertex of a clipping box for the data. Only points inside the box will be output.
+ * `voxelSize (float)`: Specifies the voxel size used to grid, average and filter datapoints (in meters). 
+ * `qualityThreshold (int)`: Specifies the number of points inside a voxel needed to consider that voxel data instead of noise.
+ * `inputBufferSize (int) [default: 128000]`: Specifies the size of the input buffer used for reading the point cloud (in kilobytes).
+ * `preallocBins (int) [default: 0]`: Specifies how many bin entries are preallocated for the binning grid. Preallocation can be used to avoid out-of-memory issues, preventing reallocations of the bin vector during point gridding.
 	
 ==dtpoisson==
 dtpoisson takes a point coud decorated with normals and generates a mesh using the Poisson surface 
 reconstruction method.
 
 ===SUPPORTED PARAMETERS===
-* `inputFile (string)`:	Specifies the path to the input file
-* `inputFormat (string)`: Specifies the input file format. Supported values are:
+ * `inputFile (string)`:	Specifies the path to the input file
+ * `inputFormat (string)`: Specifies the input file format. Supported values are:
 	# XYZPointsWithNormals
 	Additional information about the formats is presented at the end of this document.
-* `outputFile (string)`: Specifies the name of the output file
-* `outputFormat (string)`: Specifies the output file format. Supported values are:
+ * `outputFile (string)`: Specifies the name of the output file
+ * `outputFormat (string)`: Specifies the output file format. Supported values are:
 	# XYZPointsWithNormals
 	# PLY
 	Additional information about the formats is presented at the end of this document.
-* `solverDepth (int)`: Specifies the depth of the octree grid used for reconstructing the surface. Higher values mean higher resolution.
-* `normalNeighbors (int) [default: 0]`:	Number of point neighbors used in the normal estimation step. If this value is too low, resulting normal orientations may not be propagated correctly. If normalNeighbors are not	specified, normal calculation won't be performed.
+ * `solverDepth (int)`: Specifies the depth of the octree grid used for reconstructing the surface. Higher values mean higher resolution.
+ * `normalNeighbors (int) [default: 0]`:	Number of point neighbors used in the normal estimation step. If this value is too low, resulting normal orientations may not be propagated correctly. If normalNeighbors are not	specified, normal calculation won't be performed.
 
 ==dtoccup==
 dtoccup is an experimental tool used to generate occupacy grids from point cloud and pose data. Unused and unsupported at the moment.
 
 
 ==FILE FORMAT REFERENCE==
-* `CSVPoints`: Comma separated values file with x, y, z triplets of point coordinates
-* `CSVPoints2`:	As CSVPoints, but the first entry in each record line will be ignored (useful for timestamped files or similar)
-* `CSVPointsPose`: Comma separated values file with x, y, z triplets of point coordinates and x, y, z coordinates of positions correspoding to the AUV pose when the point was generated.
-* `CSVPointsWithBeamInfo`: Comma separated values file with x, y, z triplets of point coordinates, beam angle for the point, beam range and timestamp.
-* `CSVPointsWithBeamPoseInfo`: Same as CSVPointsWithBeamInfo, plus x, y, z coordinates	of positions correspoding to the AUV pose when the point was generated, and dive tag.
-* `XYZPointsWithNormals`: Space separated values with x, y, z triplets of point coordinates and x, y, z values for normals
-* `XYZBinaryPointsWithNormals`:	Same as XYZPointsWithNormals but in binary format, with 4-byte floats for each entry
-* `PLY`: Mesh data in the PLY format.
+ * `CSVPoints`: Comma separated values file with x, y, z triplets of point coordinates
+ * `CSVPoints2`:	As CSVPoints, but the first entry in each record line will be ignored (useful for timestamped files or similar)
+ * `CSVPointsPose`: Comma separated values file with x, y, z triplets of point coordinates and x, y, z coordinates of positions correspoding to the AUV pose when the point was generated.
+ * `CSVPointsWithBeamInfo`: Comma separated values file with x, y, z triplets of point coordinates, beam angle for the point, beam range and timestamp.
+ * `CSVPointsWithBeamPoseInfo`: Same as CSVPointsWithBeamInfo, plus x, y, z coordinates	of positions correspoding to the AUV pose when the point was generated, and dive tag.
+ * `XYZPointsWithNormals`: Space separated values with x, y, z triplets of point coordinates and x, y, z values for normals
+ * `XYZBinaryPointsWithNormals`:	Same as XYZPointsWithNormals but in binary format, with 4-byte floats for each entry
+ * `PLY`: Mesh data in the PLY format.
