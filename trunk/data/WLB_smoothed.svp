@@ -1,0 +1,92 @@
+# WLB_smoothed.svp
+# Created on 11-Jun-2010 15:18:28
+# By kristof
+# Raw data in exported data file F6_all.csv
+# Smoothed using svp_smooth.m
+#
+# West Lake Bonney sound speed profile as determined from sonde casts at 
+# F6 in 2008 and 2009.  
+# Chen-Millero sound speed model.
+# Raw data exported from LookingGlass 2.2, dataset Bonney-4
+#  - Using lake level correction, depth calibration for WLB.
+# Sound speed values are average and interpolated from total of 19 casts 
+# from the two campaigns.  RMS variation in the casts is 1.2 m/s.
+# Three casts with approx 1 m offset in depth were manually excluded from 
+# average.
+# Values between 0-5 m and 35-45 m are obtained by linear extrapolation.
+#
+#
+# Depth 	 Sound speed
+   0.000	 1402.27
+   3.000	 1408.04
+   3.500	 1409.00
+   4.000	 1409.97
+   4.500	 1410.94
+   5.000	 1411.85
+   5.500	 1413.27
+   6.000	 1414.33
+   6.500	 1415.03
+   7.000	 1415.72
+   7.500	 1416.15
+   8.000	 1416.52
+   8.500	 1416.78
+   9.000	 1416.98
+   9.500	 1417.22
+  10.000	 1417.49
+  10.500	 1417.85
+  11.000	 1418.41
+  11.500	 1419.23
+  12.000	 1420.49
+  12.333	 1421.64
+  12.667	 1423.04
+  13.000	 1424.90
+  13.333	 1427.32
+  13.667	 1430.26
+  14.000	 1433.85
+  14.333	 1438.82
+  14.667	 1455.69
+  15.000	 1479.44
+  15.333	 1494.07
+  15.667	 1502.22
+  16.000	 1506.95
+  16.333	 1509.95
+  16.667	 1512.43
+  17.000	 1514.75
+  17.333	 1516.70
+  17.667	 1518.41
+  18.000	 1519.86
+  18.333	 1521.18
+  18.667	 1522.32
+  19.000	 1523.40
+  19.333	 1524.29
+  19.667	 1525.30
+  20.000	 1526.49
+  20.333	 1527.66
+  20.667	 1528.88
+  21.000	 1530.13
+  21.333	 1531.40
+  21.667	 1532.82
+  22.000	 1534.35
+  23.000	 1540.01
+  24.000	 1545.81
+  25.000	 1550.70
+  26.000	 1554.52
+  27.000	 1557.51
+  28.000	 1559.78
+  29.000	 1562.13
+  30.000	 1564.77
+  31.000	 1567.43
+  32.000	 1568.79
+  33.000	 1569.11
+  34.000	 1569.10
+  35.000	 1569.11
+  36.000	 1569.12
+  37.000	 1569.14
+  38.000	 1569.16
+  39.000	 1569.17
+  40.000	 1569.19
+  41.000	 1569.20
+  42.000	 1569.22
+  43.000	 1569.24
+  44.000	 1569.25
+  45.000	 1569.27
