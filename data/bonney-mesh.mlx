@@ -1,0 +1,9 @@
+<!DOCTYPE FilterScript>
+<FilterScript>
+ <filter name="Conditional Vertex Selection">
+  <Param type="RichString" value="(z &lt; 0)" name="condSelect"/>
+  <Param type="RichBool" value="true" name="strictSelect"/>
+ </filter>
+ <filter name="Delete Selected Vertices"/>
+ <filter name="Invert Faces Orientation"/>
+</FilterScript>
