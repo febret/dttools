@@ -382,7 +382,7 @@ void PointCloud::addPing(const RangeDataPing& ping, const RaytracerConfiguration
 				double atakeoffAngle = takeoffAngle >= 0 ? takeoffAngle : -takeoffAngle;
 				int status = mb_rt(verbose, cfg.svp.model, d, 
 					atakeoffAngle, r / cfg.sensorSoundVelocity,
-					MB_SSV_CORRECT, cfg.svp.velocity[0], 0, 
+					MB_SSV_CORRECT, cfg.sensorSoundVelocity, 0, 
 					0, NULL, NULL, NULL, 
 					&xx, &zz, 
 					&ttime, &ray_stat, &error);
