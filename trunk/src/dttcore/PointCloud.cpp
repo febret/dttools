@@ -126,7 +126,14 @@ void PointCloud::readNext(int bufferSize)
 			}
 			else if(myFormat == FileFormat::CSVPoints)
 			{
-				pt.position = vmml::vec3d(values[0], values[1], values[2]);
+				if(size >= 3)
+				{
+					pt.position = vmml::vec3d(values[0], values[1], values[2]);
+				}
+				else
+				{
+					pt.position = vmml::vec3d(values[0], values[1], 0);
+				}
 			}
 			else if(myFormat == FileFormat::CSVPoints2)
 			{

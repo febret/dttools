@@ -38,6 +38,7 @@ public:
 	static int extractValues(const char* str, double* values);
 	static void* loadFile(const char* filename, int start = 0, int length = -1);
 	static int countStringLines(const char* str);
+	static int exec(const char* command);
 
 private:
 	Utils() {}
