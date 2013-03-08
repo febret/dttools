@@ -21,6 +21,8 @@ SET(SOURCES
   mb_rt.cpp
   mb_angle.cpp
   mb_fbt.cpp
+  
+  tinythread.cpp
 )
 
 ADD_DEFINITIONS( -D_SECURE_SCL=0 -D_HAS_ITERATOR_DEBUGGING=0)

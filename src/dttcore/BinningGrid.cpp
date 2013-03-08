@@ -63,6 +63,10 @@ void BinningGrid::initialize(const vmml::vec3d& minBounds, const vmml::vec3d& ma
 
 	fprintf(stderr, "BinningGrid: voxel size = %f, resolution = %d\n", voxelSize, resolution);
 
+	int resolution_x = (int)(size[0] / voxelSize);
+	int resolution_y = (int)(size[1] / voxelSize);
+	int resolution_z = 100; //(int)(size[2] / voxelSize);
+
 	size[0] = (double)(resolution - 1) / maxSize;
 	size[1] = (double)(resolution - 1) / maxSize;
 	size[2] = (double)(resolution - 1) / maxSize;
@@ -80,7 +84,8 @@ void BinningGrid::initialize(const vmml::vec3d& minBounds, const vmml::vec3d& ma
 	for(int i = 0; i < 16; i++) myTransform.T_[i] = transform.begin()[i];
 	myTransform.Transpose();
 
-	myOctree = new ravec::OctreeGrid<int>(resolution, resolution, resolution, -1);
+	//myOctree = new ravec::OctreeGrid<int>(resolution, resolution, resolution, -1);
+	myOctree = new ravec::OctreeGrid<int>(resolution_x + 1, resolution_y + 1, resolution_z, -1);
 	myWorldGrid = new ravec::WorldGrid<int>(myTransform, myOctree);
 
 	if(preallocBins != 0)
@@ -93,7 +98,7 @@ void BinningGrid::initialize(const vmml::vec3d& minBounds, const vmml::vec3d& ma
 void BinningGrid::addPoints(PointCloud& points)
 {
 	int numPoints = points.getPoints().size();
-	fprintf(stderr, "Tracing points (%d)...\n", numPoints);
+	//fprintf(stderr, "Tracing points (%d)...\n", numPoints);
 
 	float size = 1;
 
