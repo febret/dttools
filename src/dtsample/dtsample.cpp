@@ -47,6 +47,8 @@ char* inputFormat;
 char* samplesFile;
 char* outputFile;
 
+float sampleRadius = 1.0f;
+
 int inputBufferSize = 32000;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -68,6 +70,7 @@ void setup(const char* filename)
 	}
 
 	CFG_MAP_INT(inputBufferSize);
+	CFG_MAP_FLOAT(sampleRadius);
 
 	CFG_END;
 
@@ -80,22 +83,24 @@ int main(int argc, char* argv[])
 	setup(argv[1]);
 
 	PointCloud samplesCloud;
-	samplesCloud.openInputFile(samplesFile, FileFormat::CSVPoints);
+	samplesCloud.read(samplesFile, FileFormat::CSVPoints);
 	std::vector<SonarPoint>& samples = samplesCloud.getPoints();
 	for(int i = 0; i < samples.size(); i++)
 	{
-		// Use range to store sample distance
-		samples[i].range = std::numeric_limits<float>::max();
+		// Use range to store number of samples.
+		samples[i].range = 0;
 	}
 
 	for(int i = 0; i < inputFiles; i++)
 	{
+		fprintf(stderr, "\nProcessing %s...\n", inputFile[i]);
 		PointCloud input;
 		input.openInputFile(inputFile[i], FileFormat::fromString(inputFormat));
 		while(!input.endOfFile())
 		{
 			input.readNext(inputBufferSize);
-			// Compare points to samples, update measurements, if a point is closer to sample coordinates
+			//fprintf(stderr, ".");
+			// For each sample, if point is within sample radius, add to accumulator
 			std::vector<SonarPoint>& pts = input.getPoints();
 			for(int j = 0; j < pts.size(); j++)
 			{
@@ -103,10 +108,15 @@ int main(int argc, char* argv[])
 				for(int k = 0; k < samples.size(); k++)
 				{
 					vmml::vec3d dist = (pts[j].position - samples[k].position);
-					if(dist.length() < samples[k].range)
+					// Compute 2D distance.
+					dist.z() = 0;
+					if(dist.length() < sampleRadius)
 					{
-						samples[k].range = dist.length();
-						samples[k].position[2] = pts[j].position[2];
+						samples[k].range++;
+						// Accumulate sample depth
+						samples[k].position[2] += pts[j].position[2];
+						fprintf(stderr, "%-10f %-10f %-10f %-10f\n",
+							pts[j].position[0], pts[j].position[1], pts[j].position[2]);
 					}
 				}
 			}
@@ -115,16 +125,19 @@ int main(int argc, char* argv[])
 		input.closeFile();
 	}
 
-	fprintf(stderr, "Writing point cloud...\n");
-	samplesCloud.write(outputFile, FileFormat::CSVPoints);
-
-	fprintf(stderr, "Measurement values and distances:\n");
+	// Average and compute depths
+	fprintf(stderr, "Sampling radius: %f\n", sampleRadius);
+	fprintf(stderr, "Point(X, Y, Depth) - Number of samples:\n");
 	for(int i = 0; i < samples.size(); i++)
 	{
+		samples[i].position[2] = samples[i].position[2] / samples[i].range;
 		fprintf(stderr, "%-10f %-10f %-10f %-10f\n",
 			samples[i].position[0], samples[i].position[1], samples[i].position[2],
 			samples[i].range);
 	}
+
+	fprintf(stderr, "Writing point cloud...\n");
+	samplesCloud.write(outputFile, FileFormat::CSVPoints);
     return 0;
 }
 
