@@ -31,6 +31,7 @@
 
 #include <queue>
 #include <vector>
+#include <stdio.h>
 
 #define VMMLIB_DONT_FORCE_ALIGNMENT // Disable vmmlib data alignment since it doesn't work with std containers.
 #include "vmmlib/vector.hpp"
