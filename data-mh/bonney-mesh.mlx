@@ -1,0 +1,14 @@
+<!DOCTYPE FilterScript>
+<FilterScript>
+ <filter name="Conditional Vertex Selection">
+  <Param type="RichString" value="(z &lt; 0)" name="condSelect"/>
+  <Param type="RichBool" value="true" name="strictSelect"/>
+ </filter>
+ <filter name="Delete Selected Vertices"/>
+ <filter name="Invert Faces Orientation">
+  <Param type="RichBool" value="true" name="forceFlip"/>
+ </filter>
+ <filter name="Remove Isolated pieces (wrt Diameter)">
+  <Param type="RichAbsPerc" value="386.967" min="0" name="MinComponentDiag" max="3921.83"/>
+ </filter>
+</FilterScript>
