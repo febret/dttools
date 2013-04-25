@@ -1,13 +1,5 @@
 <!DOCTYPE FilterScript>
 <FilterScript>
- <filter name="Conditional Vertex Selection">
-  <Param type="RichString" value="(z &lt; 0)" name="condSelect"/>
-  <Param type="RichBool" value="true" name="strictSelect"/>
- </filter>
- <filter name="Delete Selected Vertices"/>
- <filter name="Remove isolated pieces (wrt diameter)">
-  <Param type="RichAbsPerc" value="386.401" min="0" name="MinComponentDiag" max="3864.01"/>
- </filter>
  <filter name="Transform: Flip and/or swap axis">
   <Param type="RichBool" value="false" name="flipX"/>
   <Param type="RichBool" value="true" name="flipY"/>
