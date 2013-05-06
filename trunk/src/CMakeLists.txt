@@ -45,7 +45,7 @@ SET (LIB_RELEASE ${PROJECT_SOURCE_DIR}/../lib/${ARCH}-${TOOL}-release)
 #######################################################################################################################
 # Directories needed for compilation
 INCLUDE_DIRECTORIES(
-  ${PROJECT_SOURCE_DIR}/mpidttcore/
+  ${PROJECT_SOURCE_DIR}/dttcore/
 )
 
 #######################################################################################################################
@@ -57,7 +57,7 @@ ADD_SUBDIRECTORY(dtrt)
 #ADD_SUBDIRECTORY(dtsample)
 #ADD_SUBDIRECTORY(dtpoisson)
 ADD_SUBDIRECTORY(mpidtrt)
-#ADD_SUBDIRECTORY(mpidtmerge)
-ADD_SUBDIRECTORY(mpidttcore)
+ADD_SUBDIRECTORY(mpidtmerge)
+#ADD_SUBDIRECTORY(mpidttcore)
 
 
