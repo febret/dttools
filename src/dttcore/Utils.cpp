@@ -91,14 +91,18 @@ void* Utils::loadFile(const char* filename, int start, int size)
 	}
 	else
 	{
-		length = length - size;
+		if(size > 0)
+		{
+			length = length - size;
+		}
 	}
 
-	void* data = new char[length];
-	
+	void* data = malloc(length);
 	fprintf(stderr, "%s: reading (%d Kb)...\n", filename, (length / 1024));
 	fseek(file, start, SEEK_SET);
 	fread(data, 1, length, file);
+	
+	fclose(file);
 
 	return data;
 }
