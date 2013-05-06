@@ -34,7 +34,7 @@
 class PoseData
 {
 public:
-	PoseData() {}
+	PoseData(): myPoses(NULL) {}
 	~PoseData();
 
 	bool read(const std::string& filename, FileFormat::Enum format);

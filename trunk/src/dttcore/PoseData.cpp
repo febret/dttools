@@ -49,7 +49,7 @@ bool PoseData::read(const std::string& filename, FileFormat::Enum format)
 	{
 		int k = 0;
 		int lines = Utils::countStringLines(data) - 1;
-		myPoses = new RangeDataPose[lines - 1];
+		myPoses = new RangeDataPose[lines + 2];
 
 		double values[7];
 
@@ -88,8 +88,9 @@ bool PoseData::read(const std::string& filename, FileFormat::Enum format)
 			line = nl + 1;
 			nl = strchr(line, '\n');
 		}
-		delete data;
-
+		
+		free(data);
+		
 		myLength = lines;
 		return true;
 	}
