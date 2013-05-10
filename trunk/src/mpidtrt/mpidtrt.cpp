@@ -36,6 +36,9 @@
 #include "DeltaTData.h"
 #include "PoseData.h"
 
+#include "mpi.h"
+#include "string.h"
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Tool configuration parameters.
 static const int MAX_FILES = 128;
@@ -45,8 +48,12 @@ char* poseFile[MAX_FILES];
 int   diveTag[MAX_FILES];
 int pingDecimation;
 char* outputFile = "output.csv";
+char* finalOutputFile;
+char tempName[1024];
 char* outputFormat = "CSVPoints";
 RaytracerConfiguration raytracerCfg;
+double startTime, startTime2, endTime, endTime2;
+int processCount, rank;
 
 char* inputDeltaTFormat = "CSVENDURANCEDeltaT";
 char* inputPoseFormat = "CSVENDURANCEPose";
@@ -78,7 +85,6 @@ int outputBufferSize = 8000; // Use an 8 mb buffer for writing. Size doesn't rea
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void loadConfig(const char* cfg)
 {
-	printf("loading config %s...\n", cfg);
 	CFG_START(cfg);
 
 	CFG_MAP_STRING(inputDeltaTFormat);
@@ -155,7 +161,7 @@ void setup(const char* cfgFile)
 	raytracerCfg.beamDecimation = beamDecimation;
 	raytracerCfg.sensorSoundVelocity = sensorSoundVelocity;
 
-	fprintf(stderr, "Sound velocity set in DeltaT sensor: %f\n", sensorSoundVelocity);
+	//fprintf(stderr, "Sound velocity set in DeltaT sensor: %f\n", sensorSoundVelocity);
 
 	// Setup the pose world transform.
 	poseWorldTransform[0][0] = poseTransform[0];
@@ -183,23 +189,18 @@ void setup(const char* cfgFile)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void processDive(const char* deltaTFilename, const char* poseFilename, int diveTag, PointCloud& pointCloud, RaytracerConfiguration& cfg)
+void processDive(const char* deltaTFilename, const char* poseFilename, int diveTag, PointCloud& pointCloud, RaytracerConfiguration& cfg, int myRank, int processCount)
 {
 	DeltaTData deltaTData;
 	PoseData poseData;
 
-	//printf("reading %s...\n", deltaTFilename);
 	deltaTData.read(deltaTFilename, FileFormat::fromString(inputDeltaTFormat), pingDecimation);
-
-	//printf("reading %s...\n", poseFilename);
 	poseData.read(poseFilename, FileFormat::fromString(inputPoseFormat));
-
-	printf("processing %d pings...\n", deltaTData.getLength());
+	//printf("processing %d pings...\n", deltaTData.getLength());
 
 	PingStats pingStats;
-
 	int j = 0;
-	for(int i = 0; i < deltaTData.getLength(); i++)
+	for(int i = myRank*(deltaTData.getLength()/processCount); i < myRank*(deltaTData.getLength()/processCount)+(deltaTData.getLength()/processCount); i++)
 	{
 		// Merge pose and range data.
 		RangeDataPing& ping = deltaTData.getPing(i);
@@ -218,43 +219,92 @@ void processDive(const char* deltaTFilename, const char* poseFilename, int diveT
 		}
 	}
 
-	int passedPerc = pingStats.passedPoints * 100 / pingStats.totalPoints;
-	int addedPerc = pingStats.addedPoints * 100 / pingStats.passedPoints;
-	int failedPerc = pingStats.raytraceFailures * 100 / pingStats.passedPoints;
+	if(myRank == processCount-1)
+	{
+		for(int i = (deltaTData.getLength()/processCount)*processCount; i<deltaTData.getLength(); i++)
+        	{
+                	// Merge pose and range data.
+                	RangeDataPing& ping = deltaTData.getPing(i);
+                	while(j < poseData.getLength() && poseData.getPose(j).t < ping.t) j++;
 
-	printf("Points Total: %dk Passed: %dk(%d%% of total) Added: %dk(%d%% of passed) Raytrace Failures: %dk(%d%% of passed)\n",
-		pingStats.totalPoints / 1000, 
-		pingStats.passedPoints / 1000, passedPerc,
-		pingStats.addedPoints / 1000, addedPerc,
-		pingStats.raytraceFailures / 1000, failedPerc);
+                	// Interpolate?
+                	ping.position = poseData.getPose(j).position;
+                	ping.orientation = poseData.getPose(j).orientation;
+
+                	// Generate a point cloud for this ping and store it in the point cloud manager by the generator.
+                	pointCloud.addPing(ping, cfg, pingStats);
+
+                	if(pointCloud.getPoints().size() >= outputBufferSize / sizeof(SonarPoint))
+                	{
+                       		pointCloud.flush();
+                	}
+        	}
+
+	}
+
+
+	//int passedPerc = pingStats.passedPoints * 100 / pingStats.totalPoints;
+	//int addedPerc = pingStats.addedPoints * 100 / pingStats.passedPoints;
+	//int failedPerc = pingStats.raytraceFailures * 100 / pingStats.passedPoints;
+
+	//printf("Points Total: %dk Passed: %dk(%d%% of total) Added: %dk(%d%% of passed) Raytrace Failures: %dk(%d%% of passed)\n",
+		//pingStats.totalPoints / 1000, 
+		//pingStats.passedPoints / 1000, passedPerc,
+		//pingStats.addedPoints / 1000, addedPerc,
+		//pingStats.raytraceFailures / 1000, failedPerc);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[])
 {
-	// Load the tool configuration.
+	MPI_Init(&argc, &argv);
+	MPI_Comm_size(MPI_COMM_WORLD, &processCount);
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	startTime = MPI_Wtime();
 	setup(argv[1]);
-
-	PointCloud pointCloud;
-	pointCloud.getPoints().reserve(outputBufferSize / sizeof(SonarPoint));
-
-	pointCloud.openOutputFile(outputFile, FileFormat::fromString(outputFormat));
-
+	finalOutputFile = outputFile;
+	sprintf(tempName, "%s.%d", outputFile, rank);
+	outputFile = tempName;
+ 	PointCloud pointCloud;
+        pointCloud.getPoints().reserve(outputBufferSize / sizeof(SonarPoint));
+	pointCloud.deleteOutputFile(outputFile);
+	pointCloud.openOutputFile(outputFile, FileFormat::fromString(outputFormat), true);
+	
+	startTime2 = MPI_Wtime();
 	int lastDiveTag = diveTag[0];
 	for(int i = 0; i < inputFiles; i++)
 	{
-		processDive(deltatFile[i], poseFile[i], diveTag[i], pointCloud, raytracerCfg);
+		processDive(deltatFile[i], poseFile[i], diveTag[i], pointCloud, raytracerCfg, rank, processCount);
 	}
 
 	vmml::vec3d minb = pointCloud.getMinBounds();
 	vmml::vec3d maxb = pointCloud.getMaxBounds();
-	printf("min bounds: %f, %f, %f\n", minb[0], minb[1], minb[2]);
-	printf("max bounds: %f, %f, %f\n", maxb[0], maxb[1], maxb[2]);
-
+	//printf("min bounds: %f, %f, %f\n", minb[0], minb[1], minb[2]);
+	//printf("max bounds: %f, %f, %f\n", maxb[0], maxb[1], maxb[2]);
+	
 	pointCloud.flush();
 	pointCloud.closeFile();
 
-    return 0;
+	MPI_Barrier(MPI_COMM_WORLD);
+	endTime = MPI_Wtime();
+	if(rank == 0)
+	{
+		pointCloud.deleteOutputFile(finalOutputFile);
+		for(int i=0; i<processCount; i++)
+		{
+			sprintf(tempName, "%s.%d", finalOutputFile, i);
+			outputFile = tempName;
+			pointCloud.mergeOutputFiles(finalOutputFile, outputFile);
+			pointCloud.deleteOutputFile(outputFile);
+		}
+		endTime2 = MPI_Wtime();
+		printf("\nTime with merge: %lf\nTime without merge: %lf\n", endTime2-startTime, endTime-startTime);
+	}
+
+
+	MPI_Finalize();
+    	return 0;
 }
 
 

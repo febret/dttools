@@ -98,7 +98,7 @@ void* Utils::loadFile(const char* filename, int start, int size)
 	}
 
 	void* data = malloc(length);
-	fprintf(stderr, "%s: reading (%d Kb)...\n", filename, (length / 1024));
+	//fprintf(stderr, "%s: reading (%d Kb)...\n", filename, (length / 1024));
 	fseek(file, start, SEEK_SET);
 	fread(data, 1, length, file);
 	
