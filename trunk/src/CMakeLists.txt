@@ -51,7 +51,7 @@ INCLUDE_DIRECTORIES(
 #######################################################################################################################
 # Add subdirectiories
 ADD_SUBDIRECTORY(dttcore)
-#ADD_SUBDIRECTORY(dtmerge)
+ADD_SUBDIRECTORY(dtmerge)
 ADD_SUBDIRECTORY(dtrt)
 #ADD_SUBDIRECTORY(dtoccup)
 #ADD_SUBDIRECTORY(dtsample)

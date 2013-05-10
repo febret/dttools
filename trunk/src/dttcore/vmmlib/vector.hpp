@@ -121,7 +121,7 @@ public:
     const vector& negate();
 
     // constructors 
-    vector() {}; // std ctor - WARNING: NO INITIALIZATION
+    vector() {}; // std ctor - WARNIN/data NO INITIALIZATION
     vector( const T& a ); // sets all components to a;
     vector( const T& x, const T& y );
     vector( const T& x, const T& y, const T& z );
