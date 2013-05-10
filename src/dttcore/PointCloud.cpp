@@ -60,7 +60,9 @@ using std::isnan;
 PointCloud::PointCloud():
 	myHasNormals(false), myHasBeamInfo(false), myHasPoseInfo(false), myHasQuality(false),
 	myNormalNeighbors(10),
-	myFile(NULL)
+	myFile(NULL),
+	myReadLength(0),
+	myReadDone(false)
 {
 	resetBounds();
 }
@@ -86,7 +88,42 @@ void PointCloud::read(const std::string& filename, FileFormat::Enum format)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 bool PointCloud::endOfFile()
 {
-	return feof(myFile);
+	return feof(myFile) || (myReadLength != 0 && (myFileOffset - myReadOffset) >= myReadLength) || myReadDone;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void PointCloud::setReadOffset(long int offset)
+{
+	char lineData[1024];
+	// Adjust the offset to read from the beginning of a line.
+	if(offset > 512)
+	{
+		fseek(myFile, offset - 512, SEEK_SET);
+		int len = fread(lineData, 1, 512, myFile);
+		lineData[len] = '\0';
+		char* lastnl = strrchr(lineData, '\n');
+		if(lastnl != NULL)
+		{
+			int offdiff = lastnl - lineData;
+			offset = offset - len + offdiff;
+		}
+	}
+	
+	myFileOffset = offset;
+	myReadOffset = offset;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void PointCloud::setReadLength(long int length)
+{
+	myReadLength = length;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+long int PointCloud::getSizeInBytes()
+{
+	fseek(myFile, 0, SEEK_END);
+	return ftell(myFile);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,6 +134,13 @@ void PointCloud::readNext(int bufferSize)
 	char* data = new char[bufferSize + 1];
 	fseek(myFile, myFileOffset, SEEK_SET);
 	
+	// Adjust the read buffer size so we don't go past the read length. Only do this if read length is different than 0.
+	if(myFileOffset + bufferSize - myReadOffset >= myReadLength) 
+	{
+		bufferSize = myReadLength - (myFileOffset - myReadOffset);
+		myReadDone = true;
+	}
+	
 	int len = fread(data, 1, bufferSize, myFile);
 	data[len] = '\0';
 
@@ -106,7 +150,6 @@ void PointCloud::readNext(int bufferSize)
 
 		char* line = data;
 		char* nl = strchr(line, '\n');
-		*nl = '\0';
 
 		int i = 0;
 		while(nl != NULL)
@@ -163,10 +206,14 @@ void PointCloud::readNext(int bufferSize)
 		}
 
 		// Set the file offset to be the start if the next unparsed line.
-		// the + i at the end is needed because each \n character in the text stream is actually two
-		// bytes (\n and \r), so we need to add the number of lines to correctly compute the file
+		// ON WINDOWS the + i at the end is needed because each /n character in the text stream is actually two
+		// bytes (/n and /r), so we need to add the number of lines to correctly compute the file
 		// offset for the next buffered read.
+#ifdef WIN32
 		myFileOffset += (line - data) + i;
+#else
+		myFileOffset += (line - data);
+#endif
 	}
 
 	delete data;
@@ -213,15 +260,20 @@ void PointCloud::writeItem(const SonarPoint& pt)
 	}
 	else if(myFormat == FileFormat::XYZPointsWithNormals)
 	{
-		DTT_ASSERT(myHasNormals);
-
-		if(pt.normal != vmml::vec3f::ZERO)
+		//DTT_ASSERT(myHasNormals);
+		// If the dataset has normal data otput it. Otherwise, just output a default up (positive Y) normal for each point.
+		if(myHasNormals && pt.normal != vmml::vec3f::ZERO)
 		{
 			const vmml::vec3f& pos = pt.position;
 			const vmml::vec3f& normal = pt.normal;
 			fprintf(myFile, "%f %f %f %f %f %f\n", 
 				pos[0], pos[1], pos[2],
 				normal[0], normal[1], normal[2]);
+		}
+		else
+		{
+			const vmml::vec3f& pos = pt.position;
+			fprintf(myFile, "%f %f %f 0 1 0\n", pos[0], pos[1], pos[2]);
 		}
 	}
 	//else if(myFormat == FileFormat::XYZBinaryPointsWithNormals)
@@ -243,7 +295,7 @@ void PointCloud::writeItem(const SonarPoint& pt)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void PointCloud::openOutputFile(const std::string& filename, FileFormat::Enum format)
+void PointCloud::openOutputFile(const std::string& filename, FileFormat::Enum format, bool append)
 {
 	DTT_ASSERT((
 		format == FileFormat::CSVPoints || 
@@ -256,8 +308,8 @@ void PointCloud::openOutputFile(const std::string& filename, FileFormat::Enum fo
 	myIsFileOutput = true;
 	myFileOffset = 0;
 	myFileEof = false;
-
-	myFile = fopen(filename.c_str(), "w");
+	
+	myFile = fopen(filename.c_str(), append ? "a" : "w");
 	myFormat = format;
 }
 
@@ -275,7 +327,7 @@ void PointCloud::openInputFile(const std::string& filename, FileFormat::Enum for
 	myFileOffset = 0;
 	myFileEof = false;
 
-	myFile = fopen(filename.c_str(), "r");
+	myFile = fopen(filename.c_str(), "rb");
 	myFormat = format;
 }
 
@@ -284,8 +336,10 @@ void PointCloud::closeFile()
 {
 	if(myFile != NULL)
 	{
+		fflush(myFile);
 		fclose(myFile);
 	}
+	
 	myFile = NULL;
 }
 
@@ -301,9 +355,9 @@ void PointCloud::flush()
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void PointCloud::write(const std::string& filename, FileFormat::Enum format)
+void PointCloud::write(const std::string& filename, FileFormat::Enum format, bool append)
 {
-	openOutputFile(filename, format);
+	openOutputFile(filename, format, append);
 	flush();
 	closeFile();
 }

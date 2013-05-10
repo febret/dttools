@@ -54,8 +54,13 @@ public:
 
 	void initialize(const vmml::vec3d& minBounds, const vmml::vec3d& maxBounds, float voxelSize, int preallocBins);
 	void addPoints(PointCloud& points);
+	
+	void addBins(std::vector<BinData>& bins);
 
 	void writeToPointCloud(PointCloud* cloud, int qualityThreshold = 0);
+	
+	//! Returns a list of bin data contained in the specified 3D region
+	void getBinDataRegion(const vmml::vec3d min, const vmml::vec3d max, std::vector<BinData>& result);
 
 private:
 	int myResolution;

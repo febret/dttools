@@ -109,14 +109,20 @@ public:
 	bool hasNormals() { return myHasNormals; }
 	void setHasNormals(bool value) { myHasNormals = value; }
 
-	void write(const std::string& filename, FileFormat::Enum format);
+	void write(const std::string& filename, FileFormat::Enum format, bool append = false);
 	void read(const std::string& filename, FileFormat::Enum format);
 
 	//! Stream IO
-	void openOutputFile(const std::string& filename, FileFormat::Enum format);
+	void openOutputFile(const std::string& filename, FileFormat::Enum format, bool append = false);
 	void openInputFile(const std::string& filename, FileFormat::Enum format);
 	void closeFile();
 	bool endOfFile();
+	//! Set read offset. Used by multiprocessor implementation to distribute reads.
+	void setReadOffset(long int offset);
+	//! If file offset gets past read length, endOfFil returns true (even if we are not really at end of file)
+	//! Used by multiprocessor implementation to distribute reads.
+	void setReadLength(long int offset);
+	long int getSizeInBytes();
 	void readNext(int bufferSize);
 	void flush();
 
@@ -157,7 +163,10 @@ private:
 	void* myBuffer;
 	bool myIsFileOutput;
 	bool myFileEof;
+	bool myReadDone;
 	int myFileOffset;
+	int myReadOffset;
+	int myReadLength;
 	FileFormat::Enum myFormat;
 };
 

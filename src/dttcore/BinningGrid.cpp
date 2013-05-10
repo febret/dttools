@@ -61,7 +61,7 @@ void BinningGrid::initialize(const vmml::vec3d& minBounds, const vmml::vec3d& ma
 
 	int resolution = (int)(maxSize / voxelSize);
 
-	fprintf(stderr, "BinningGrid: voxel size = %f, resolution = %d\n", voxelSize, resolution);
+	//fprintf(stderr, "BinningGrid: voxel size = %f, resolution = %d\n", voxelSize, resolution);
 
 	int resolution_x = (int)(size[0] / voxelSize);
 	int resolution_y = (int)(size[1] / voxelSize);
@@ -84,8 +84,8 @@ void BinningGrid::initialize(const vmml::vec3d& minBounds, const vmml::vec3d& ma
 	for(int i = 0; i < 16; i++) myTransform.T_[i] = transform.begin()[i];
 	myTransform.Transpose();
 
-	//myOctree = new ravec::OctreeGrid<int>(resolution, resolution, resolution, -1);
-	myOctree = new ravec::OctreeGrid<int>(resolution_x + 1, resolution_y + 1, resolution_z, -1);
+	myOctree = new ravec::OctreeGrid<int>(resolution, resolution, resolution, -1);
+	//myOctree = new ravec::OctreeGrid<int>(resolution_x + 1, resolution_y + 1, resolution_z, -1);
 	myWorldGrid = new ravec::WorldGrid<int>(myTransform, myOctree);
 
 	if(preallocBins != 0)
@@ -144,10 +144,55 @@ void BinningGrid::addPoints(PointCloud& points)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void BinningGrid::addBins(std::vector<BinData>& bins)
+{
+	int numBins = bins.size();
+	//fprintf(stderr, "Tracing points (%d)...\n", numPoints);
+
+	float size = 1;
+
+	for(int i = 0; i < numBins; i++)
+	{
+		BinData& pt = bins[i];
+
+		vmml::vec3d pos = pt.position / pt.numPoints;
+
+		int x, y, z;
+		myWorldGrid->WorldToMap(pos[0], pos[1], pos[2], &x, &y, &z);
+
+		if(x >= 0 && x < myResolution &&
+			y >= 0 && y < myResolution &&
+			z >= 0 && z < myResolution)
+		{
+			int dataIndex = myOctree->Get(x, y, z); 
+			if(dataIndex == -1)
+			{
+				myBinData.push_back(pt);
+				dataIndex = myBinData.size() - 1;
+				myOctree->Set(x, y, z, dataIndex);
+			}
+			else
+			{
+				// Merge bins
+				BinData& data = myBinData.at(dataIndex);
+				data.numPoints += pt.numPoints; 
+				data.position += pt.position;
+				data.normal += pt.normal;
+			}
+		}
+		else
+		{
+			printf("BIN OUT OF BOUNDS\n");
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void BinningGrid::writeToPointCloud(PointCloud* cloud, int qualityThreshold)
 {
 	int filtered = 0;
-	fprintf(stderr, "Writing %d of %d points to point cloud...\n", myBinData.size());
+	//fprintf(stderr, "Writing %d of %d points to point cloud...\n", myBinData.size());
+	if(myBinData.size() == 0) return;
 	// Reserve memory
 	int items = 0;
 	for(unsigned int i = 0; i < myBinData.size(); i++)
@@ -189,6 +234,25 @@ void BinningGrid::writeToPointCloud(PointCloud* cloud, int qualityThreshold)
 	}
 	cloud->updateBounds();
 	int filteredPercent = filtered * 100 / myBinData.size();
-	fprintf(stderr, "point quality threshold: %d. Filtered out points: %d%%\n", qualityThreshold, filteredPercent);
+	//fprintf(stderr, "point quality threshold: %d. Filtered out points: %d%%\n", qualityThreshold, filteredPercent);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void BinningGrid::getBinDataRegion(const vmml::vec3d min, const vmml::vec3d max, std::vector<BinData>& result)
+{
+	//printf(">>>>>>>>>>>>>>>> TOTAL BINS %d\n", myBinData.size());
+	for(unsigned int i = 0; i < myBinData.size(); i++)
+	{
+		BinData& data = myBinData.at(i);
+		vmml::vec3d pos = data.position / data.numPoints;
+		if(pos[0] > min[0] && 
+			pos[1] > min[1] && 
+			pos[2] > min[2] && 
+			pos[0] < max[0] &&
+			pos[1] < max[1] &&
+			pos[2] < max[2]) 
+			result.push_back(data);
+	}
+}
+
 
