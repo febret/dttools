@@ -115,6 +115,8 @@ public:
 	//! Stream IO
 	void openOutputFile(const std::string& filename, FileFormat::Enum format, bool append = false);
 	void openInputFile(const std::string& filename, FileFormat::Enum format);
+	void deleteOutputFile(const std::string& filename);
+	void mergeOutputFiles(const std::string& finalOutputFile, const std::string& singleOutputFile);
 	void closeFile();
 	bool endOfFile();
 	//! Set read offset. Used by multiprocessor implementation to distribute reads.

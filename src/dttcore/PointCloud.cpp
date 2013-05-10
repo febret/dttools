@@ -313,6 +313,25 @@ void PointCloud::openOutputFile(const std::string& filename, FileFormat::Enum fo
 	myFormat = format;
 }
 
+void PointCloud::deleteOutputFile(const std::string& filename)
+{
+	remove(filename.c_str());
+}
+
+void PointCloud::mergeOutputFiles(const std::string& finalOutputFile, const std::string& singleOutputFile)
+{
+	char temp[1024];
+	FILE* finalOutput = fopen(finalOutputFile.c_str(), "a");
+	FILE* singleOutput = fopen(singleOutputFile.c_str(), "r");
+	
+	while(fgets(temp, sizeof temp, singleOutput)!=NULL)
+	{
+		fprintf(finalOutput, temp);
+	}
+
+	fclose(singleOutput);
+	fclose(finalOutput);
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void PointCloud::openInputFile(const std::string& filename, FileFormat::Enum format)
 {
