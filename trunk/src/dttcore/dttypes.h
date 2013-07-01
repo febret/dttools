@@ -63,6 +63,7 @@ public:
 		CSVPointsWithBeamInfo,
 		CSVPointsWithBeamPoseInfo,
 		XYZPointsWithNormals, 
+		BinaryPointsWithBeamInfo,
 		//XYZBinaryPointsWithNormals, 
 		VTKStructuredPointsASCII,
 		PLY};
@@ -85,6 +86,7 @@ public:
 			case VTKStructuredPointsASCII: return "VTKStructuredPointsASCII";
 			case CSVPointsWithBeamInfo: return "CSVPointsWithBeamInfo";
 			case CSVPointsWithBeamPoseInfo: return "CSVPointsWithBeamPoseInfo";
+			case BinaryPointsWithBeamInfo: return "BinaryPointsWithBeamInfo";
 		}
 		fprintf(stderr, "Invalid file format code: %d\n", value);
 		return "InvalidFormat";
@@ -105,6 +107,7 @@ public:
 		if(!strcmp(value, "VTKStructuredPointsASCII")) return VTKStructuredPointsASCII;
 		if(!strcmp(value, "CSVPointsWithBeamInfo")) return CSVPointsWithBeamInfo;
 		if(!strcmp(value, "CSVPointsWithBeamPoseInfo")) return CSVPointsWithBeamPoseInfo;
+		if(!strcmp(value, "BinaryPointsWithBeamInfo")) return BinaryPointsWithBeamInfo;
 
 		fprintf(stderr, "Invalid file format string: %s\n", value);
 		return Invalid;
