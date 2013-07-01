@@ -56,8 +56,12 @@ ADD_SUBDIRECTORY(dtrt)
 #ADD_SUBDIRECTORY(dtoccup)
 #ADD_SUBDIRECTORY(dtsample)
 #ADD_SUBDIRECTORY(dtpoisson)
-ADD_SUBDIRECTORY(mpidtrt)
-ADD_SUBDIRECTORY(mpidtmerge)
-#ADD_SUBDIRECTORY(mpidttcore)
+
+set(DTTOOLS_USE_MPI false CACHE BOOL "enable building of MPI tools")
+if(DTTOOLS_USE_MPI)
+	ADD_SUBDIRECTORY(mpidtrt)
+	ADD_SUBDIRECTORY(mpidtmerge)
+	#ADD_SUBDIRECTORY(mpidttcore)
+endif()
 
 
