@@ -38,7 +38,7 @@ struct RaytracerConfiguration
 		beamCount(480),
 		beamAngleStart(-60.0),
 		beamAngleEnd(60.0),
-		beamAngleOffset(0),
+		//beamAngleOffset(0),
 		rangeThreshold(10),
 		pingDecimation(1),
 		beamDecimation(1),
@@ -50,12 +50,12 @@ struct RaytracerConfiguration
 	void setSensorTransform(const vmml::vec3d& sensorPosition, const vmml::vec3d& sensorRotation)
 	{
 		sensorTransform = vmml::mat4d::IDENTITY;
-		sensorTransform.set_translation(sensorPosition);
+		sensorTransform.rotate_z(DEG_TO_RAD(sensorRotation[2]));
+		sensorTransform.rotate_y(DEG_TO_RAD(sensorRotation[1]));
 		sensorTransform.rotate_x(DEG_TO_RAD(sensorRotation[0]));
-		//sensorTransform.rotate_y(DEG_TO_RAD(sensorRotation[1]));
-		sensorTransform.rotate_z(DEG_TO_RAD(-sensorRotation[2]));
+		sensorTransform.set_translation(sensorPosition);
 		
-		beamAngleOffset = sensorRotation[1];
+		//beamAngleOffset = sensorRotation[1];
 
 		//sensorTransform.rotate_y(0);
 	}
@@ -70,7 +70,7 @@ struct RaytracerConfiguration
 	double beamAngleStart;
 	double beamAngleEnd;
 	double rangeThreshold;
-	double beamAngleOffset;
+	//double beamAngleOffset;
 	double beamFilterAngleMin;
 	double beamFilterAngleMax;
 
@@ -82,7 +82,7 @@ struct RaytracerConfiguration
 	SoundVelocityProfile svp;
 	float sensorSoundVelocity;
 
-	vmml::mat4f sensorTransform;
+	vmml::mat4d sensorTransform;
 	vmml::mat4d worldTransform;
 };
 
@@ -129,6 +129,12 @@ public:
 	void flush();
 
     void addPing(const RangeDataPing& ping, const RaytracerConfiguration& cfg, PingStats& stats);
+
+	inline bool beamHitNaive(double theta, double r, const vmml::mat4d& sensorToWorld, const RaytracerConfiguration& cfg, vmml::vec4d& beamHitW);
+
+
+	bool beamHitRaytrace( double theta, double r, const vmml::mat4d& sensorToWorld, const RaytracerConfiguration& cfg, vmml::vec4d& beamHitW);
+
 	void appendPoints(PointCloud& points);
 	void addPoint(const SonarPoint& point);
 

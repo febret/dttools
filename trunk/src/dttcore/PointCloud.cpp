@@ -446,7 +446,6 @@ void PointCloud::updateBounds(const SonarPoint& pt)
 ///////////////////////////////////////////////////////////////////////////////
 void PointCloud::addPing(const RangeDataPing& ping, const RaytracerConfiguration& cfg, PingStats& stats)
 {
-	vmml::vec4f beamPoints[MAX_RANGES];
 
     // Modify the point data source
 	double thetai = cfg.beamAngleStart;
@@ -458,10 +457,24 @@ void PointCloud::addPing(const RangeDataPing& ping, const RaytracerConfiguration
 
 	stats.totalPoints += cfg.beamCount;
 
-	// Build the beam point cloud in sensor space.
+    // Calculate the vehicle body to world matrix
+	vmml::mat4d bodyToWorld = vmml::mat4d::IDENTITY;
+
+	bodyToWorld.rotate_z(ping.orientation[2]);
+	bodyToWorld.rotate_y(ping.orientation[1]);
+	bodyToWorld.rotate_x(ping.orientation[0]);
+	bodyToWorld.set_translation(ping.position[0], ping.position[1], ping.position[2]);
+
+	// Calculate the sensor to world transform
+	vmml::mat4d sensorToWorld = cfg.worldTransform * bodyToWorld * cfg.sensorTransform;
+
+	// The number of elements before we start inserting this ping points.
+	int prevDataSize = myData.size();
+
     for (unsigned int i = 0; i < cfg.beamCount; i++)
     {
-        double r = ping.ranges[i];
+		bool ok = false;
+		double r = ping.ranges[i];
 
 		// Filter out invalid beams.
 		if(theta > cfg.beamFilterAngleMin &&
@@ -472,51 +485,41 @@ void PointCloud::addPing(const RangeDataPing& ping, const RaytracerConfiguration
 
 			stats.passedPoints++;
 
-			double xx;
-			double zz;
-			bool ok = true;
+			vmml::vec4d beamHitW; // storage for beam hit results
 
-			double takeoffAngle = theta + cfg.beamAngleOffset;
-
-			if(cfg.svp.model != NULL)
+			if (cfg.svp.model != NULL) // do raytracing through sound velocity profile
 			{
-				int verbose = 5;
-				int error = 0;
-				double d = ping.position[2];
-				double ttime;
-				int ray_stat;
-				double atakeoffAngle = takeoffAngle >= 0 ? takeoffAngle : -takeoffAngle;
-				int status = mb_rt(verbose, cfg.svp.model, d, 
-					atakeoffAngle, r / cfg.sensorSoundVelocity,
-					MB_SSV_CORRECT, cfg.sensorSoundVelocity, 0, 
-					0, NULL, NULL, NULL, 
-					&xx, &zz, 
-					&ttime, &ray_stat, &error);
-
-				if(status == MB_FAILURE || _isnan(xx) || _isnan(zz) || !_finite(xx) || !_finite(zz)) 
-				{
-					ok = false;
+				ok = beamHitRaytrace(theta, r, sensorToWorld, cfg, beamHitW);
+				if (!ok)
 					stats.raytraceFailures++;
-				}
-
-				if(takeoffAngle < 0) xx = -xx;
-				if(takeoffAngle > 90) zz = - zz;
 			}
-			else
+			else // cfg.svp.model == NULL (i.e. no sound velocity profile is specified)
 			{
-				// If no sound velocity profile is specified, perform a simple point projection along a straight
-				// line instead of raytracing				
-				xx = r * sin(DEG_TO_RAD(takeoffAngle));
-				zz = r * cos(DEG_TO_RAD(takeoffAngle));
+				ok = beamHitNaive(theta, r, sensorToWorld, cfg, beamHitW);
 			}
 
-			if(ok)
+			if (ok)
 			{
-				beamPoints[numBeams] = vmml::vec4f((float)takeoffAngle, (float)xx, (float)zz, (float)r);
 				numBeams++;
-			}
-
-		}
+	
+				SonarPoint pt;
+				// Write point position converting from homogeneous coordinates.
+				pt.position = beamHitW / beamHitW[3];
+	
+				pt.t = ping.t;
+				//pt.diveTag = ping.diveTag;
+				pt.range = r;
+				pt.angle = theta;
+				pt.sourcePosition = ping.position;
+				pt.sourceOrientation = ping.orientation;
+	
+				if(!_finite(pt.position[0]) || !_finite(pt.position[1]) || !_finite(pt.position[2]))
+					abort();
+	
+				myData.push_back(pt);
+				updateBounds(pt);
+			} // end if ok
+		} // end if not filtered
 		theta += dtheta;
     }
 
@@ -524,47 +527,6 @@ void PointCloud::addPing(const RangeDataPing& ping, const RaytracerConfiguration
 
     //if (numBeams) printf("%12.3f %12.3f %6.3f %5d\n", ping.position[0], ping.position[1], ping.position[2], numBeams);
 
-    // Update the body to world matrix
-	vmml::mat4d bodyToWorld = vmml::mat4d::IDENTITY;
-
-	bodyToWorld.rotate_x(ping.orientation[0]);
-	bodyToWorld.rotate_y(ping.orientation[1]);
-	bodyToWorld.rotate_z(ping.orientation[2]);
-	bodyToWorld.set_translation(ping.position[0], ping.position[1], ping.position[2]);
-
-	// The number of elements before we start inserting this ping points.
-	int prevDataSize = myData.size();
-
-	for (int i = 0; i < numBeams; i++)
-	{
-		float theta = beamPoints[i][0];
-		float range = beamPoints[i][3];
-		beamPoints[i][0] = 0.0; // Component 0 was used to store beam angle. restore it to its original value.
-		beamPoints[i][3] = 1.0; // Component 3 was used to store beam range. restore it to its original value (1.0).
-
-		// Transform the point from sensor to world coordinates
-		vmml::vec4f pointB = cfg.sensorTransform * beamPoints[i];
-		vmml::vec4d pointW = cfg.worldTransform * bodyToWorld * pointB;
-
-		SonarPoint pt;
-		// Write point position converting from homogeneous coordinates.
-		pt.position = pointW / pointW[3];
-
-		pt.t = ping.t;
-		//pt.diveTag = ping.diveTag;
-		pt.range = range;
-		pt.angle = theta;
-		pt.sourcePosition = ping.position;
-		pt.sourceOrientation = ping.orientation;
-
-		if(!_finite(pt.position[0]) || !_finite(pt.position[1]) || !_finite(pt.position[2]))
-		{
-			abort();
-		}
-
-		myData.push_back(pt);
-		updateBounds(pt);
-	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -625,4 +587,81 @@ void PointCloud::computeNormals()
 
 	myHasNormals = true;
 }
+
+bool PointCloud::beamHitRaytrace( double theta, double r, const vmml::mat4d& sensorToWorld, const RaytracerConfiguration& cfg, vmml::vec4d& beamHitW )
+{
+	// Build the beam point cloud in local vertical frame.
+	// This frame has its origin at zero depth over the sensor, with axes aligned with the world frame.
+
+	// Get beam direction in world frame (using vmml framework for ease of development, inefficient computation)
+	vmml::vec4d b_S; // Beam direction vector in sensor coordinates
+	b_S[0] = 0.0;
+	b_S[1] = sin(DEG_TO_RAD(theta));
+	b_S[2] = cos(DEG_TO_RAD(theta));
+	b_S[3] = 0.0; // just a direction vector (unbound)
+
+	// transform beam direction to world frame
+	vmml::vec3d b_W = sensorToWorld*b_S;
+
+	// takeoff angle relative to world down 
+	double takeoffAngle = RAD_TO_DEG(acos(b_W[2]));
+
+	vmml::vec3d sensorPos;
+	sensorToWorld.get_translation(sensorPos);
+
+	// sensor depth
+	double d = sensorPos[2];
+
+	// Beam endpoints
+	double rr; // horizontal distance from local down axis
+	double zz; // depth along local down axis
+
+	int verbose = 5;
+	int error = 0;
+	double ttime;
+	int ray_stat;
+	int status = mb_rt(verbose, cfg.svp.model, d, 
+		takeoffAngle, r / cfg.sensorSoundVelocity,
+		MB_SSV_CORRECT, cfg.sensorSoundVelocity, 0, 
+		0, NULL, NULL, NULL, 
+		&rr, &zz, 
+		&ttime, &ray_stat, &error);
+
+	if(status == MB_FAILURE || _isnan(rr) || _isnan(zz) || !_finite(rr) || !_finite(zz)) 
+	{
+		return false;
+	}
+
+	//TODO: is this needed?: if(takeoffAngle > 90) zz = -zz;
+
+	// convert from local horizontal frame used by raytracing to world frame
+
+	// components of horizontal direction vector
+	double bh_Wx = 0.0, bh_Wy = 0.0;
+	double n_bh_W = sqrt(b_W[0]*b_W[0] + b_W[1]*b_W[1]);
+	if (n_bh_W != 0.0)
+	{
+		bh_Wx = b_W[0]/n_bh_W;
+		bh_Wy = b_W[1]/n_bh_W;
+	}
+	beamHitW[0] = sensorPos[0] + bh_Wx*rr;
+	beamHitW[1] = sensorPos[1] + bh_Wy*rr;
+	beamHitW[2] = zz;
+	beamHitW[3] = 1.0; // homogeneous coordinates
+
+	return true;
+}
+
+inline bool PointCloud::beamHitNaive( double theta, double r, const vmml::mat4d& sensorToWorld, const RaytracerConfiguration& cfg, vmml::vec4d& beamHitW )
+{
+	// Calculate beam hits in sensor coordinates
+	// perform a simple point projection along a straight
+	// line instead of raytracing				
+	vmml::vec4d beamHitS(0.0, r * sin(DEG_TO_RAD(theta)), r * cos(DEG_TO_RAD(theta)), 1.0);
+	// Transform the point from sensor to world coordinates
+	beamHitW = sensorToWorld * beamHitS;
+	return true;
+}
+
+
 
