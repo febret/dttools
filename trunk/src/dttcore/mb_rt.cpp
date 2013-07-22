@@ -247,7 +247,10 @@ int mb_rt(int verbose, void *modelptr,
 		{
 		if (source_depth >= model->layer_depth_top[i] 
 			&& source_depth <= model->layer_depth_bottom[i])
+			{
 			layer = i;
+			break;
+			}
 		}
 	if (layer == -1)
 		{
