@@ -74,15 +74,9 @@ bool PoseData::read(const std::string& filename, FileFormat::Enum format)
 
 					myPoses[i].orientation = vmml::vec3d(values[1], values[2], values[3]);
 					myPoses[i].position = vmml::vec3d(values[4], values[5], values[6]);
+					i++;
 				}
 			} 
-			else
-			  {
-				myPoses[i].t = 0.0;
-				myPoses[i].orientation = 0.0; //vmml::vec3d(values[1], values[2], values[3]);
-				myPoses[i].position = 0.0; //vmml::vec3d(values[4], values[5], values[6]);
-			  }
-			i++;
 
 			// fetch next line.
 			line = nl + 1;
