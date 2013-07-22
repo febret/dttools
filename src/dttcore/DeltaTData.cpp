@@ -72,13 +72,13 @@ bool DeltaTData::read(const std::string& filename, FileFormat::Enum format, int 
 				if (size == ENDURANCEDeltaTBeamCount + 1)
 				{
 					myPings[k].t = values[0];
-					k++;
 
 					if(format == FileFormat::CSVENDURANCEDeltaT)
 					{
 						// Copy beam range data into ping data.
 						for(int j = 0; j < ENDURANCEDeltaTBeamCount; j++) myPings[k].ranges[j] = values[j + 1]; 
 					}	
+					k++;
 				}
 			}
 			i++;
