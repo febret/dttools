@@ -489,13 +489,13 @@ void PointCloud::addPing(const RangeDataPing& ping, const RaytracerConfiguration
 
 			if (cfg.svp.model != NULL) // do raytracing through sound velocity profile
 			{
-				ok = beamHitRaytrace(theta, r, sensorToWorld, cfg, beamHitW);
+				ok = beamHitRaytrace(theta, r, sensorToWorld, cfg.svp, cfg.sensorSoundVelocity, beamHitW);
 				if (!ok)
 					stats.raytraceFailures++;
 			}
 			else // cfg.svp.model == NULL (i.e. no sound velocity profile is specified)
 			{
-				ok = beamHitNaive(theta, r, sensorToWorld, cfg, beamHitW);
+				ok = beamHitNaive(theta, r, sensorToWorld, beamHitW);
 			}
 
 			if (ok)
@@ -588,7 +588,7 @@ void PointCloud::computeNormals()
 	myHasNormals = true;
 }
 
-bool PointCloud::beamHitRaytrace( double theta, double r, const vmml::mat4d& sensorToWorld, const RaytracerConfiguration& cfg, vmml::vec4d& beamHitW )
+bool PointCloud::beamHitRaytrace( double theta, double r, const vmml::mat4d& sensorToWorld, const SoundVelocityProfile& svp, float sensorSoundVelocity, vmml::vec4d& beamHitW )
 {
 	// Build the beam point cloud in local vertical frame.
 	// This frame has its origin at zero depth over the sensor, with axes aligned with the world frame.
@@ -620,9 +620,9 @@ bool PointCloud::beamHitRaytrace( double theta, double r, const vmml::mat4d& sen
 	int error = 0;
 	double ttime;
 	int ray_stat;
-	int status = mb_rt(verbose, cfg.svp.model, d, 
-		takeoffAngle, r / cfg.sensorSoundVelocity,
-		MB_SSV_CORRECT, cfg.sensorSoundVelocity, 0, 
+	int status = mb_rt(verbose, svp.model, d, 
+		takeoffAngle, r / sensorSoundVelocity,
+		MB_SSV_CORRECT, sensorSoundVelocity, 0, 
 		0, NULL, NULL, NULL, 
 		&rr, &zz, 
 		&ttime, &ray_stat, &error);
@@ -652,11 +652,10 @@ bool PointCloud::beamHitRaytrace( double theta, double r, const vmml::mat4d& sen
 	return true;
 }
 
-inline bool PointCloud::beamHitNaive( double theta, double r, const vmml::mat4d& sensorToWorld, const RaytracerConfiguration& cfg, vmml::vec4d& beamHitW )
+inline bool PointCloud::beamHitNaive( double theta, double r, const vmml::mat4d& sensorToWorld, vmml::vec4d& beamHitW )
 {
 	// Calculate beam hits in sensor coordinates
-	// perform a simple point projection along a straight
-	// line instead of raytracing				
+	// perform a simple point projection along a straight line				
 	vmml::vec4d beamHitS(0.0, r * sin(DEG_TO_RAD(theta)), r * cos(DEG_TO_RAD(theta)), 1.0);
 	// Transform the point from sensor to world coordinates
 	beamHitW = sensorToWorld * beamHitS;
