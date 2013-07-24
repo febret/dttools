@@ -232,6 +232,12 @@ void processDive(const char* deltaTFilename, const char* poseFilename, int diveT
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[])
 {
+	if (!argv[1])
+	{
+		fprintf(stderr, "%s: no configuration file specified.\n", argv[0]);
+		return -1;
+	}
+
 	// Load the tool configuration.
 	setup(argv[1]);
 
