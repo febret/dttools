@@ -130,10 +130,10 @@ public:
 
     void addPing(const RangeDataPing& ping, const RaytracerConfiguration& cfg, PingStats& stats);
 
-	inline bool beamHitNaive(double theta, double r, const vmml::mat4d& sensorToWorld, const RaytracerConfiguration& cfg, vmml::vec4d& beamHitW);
+	inline bool beamHitNaive(double theta, double r, const vmml::mat4d& sensorToWorld,  vmml::vec4d& beamHitW);
 
 
-	bool beamHitRaytrace( double theta, double r, const vmml::mat4d& sensorToWorld, const RaytracerConfiguration& cfg, vmml::vec4d& beamHitW);
+	bool beamHitRaytrace( double theta, double r, const vmml::mat4d& sensorToWorld, const SoundVelocityProfile& svp, float sensorSoundVelocity, vmml::vec4d& beamHitW);
 
 	void appendPoints(PointCloud& points);
 	void addPoint(const SonarPoint& point);
