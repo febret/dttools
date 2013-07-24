@@ -477,8 +477,8 @@ void PointCloud::addPing(const RangeDataPing& ping, const RaytracerConfiguration
 		double r = ping.ranges[i];
 
 		// Filter out invalid beams.
-		if(theta > cfg.beamFilterAngleMin &&
-			theta < cfg.beamFilterAngleMax &&
+		if(theta >= cfg.beamFilterAngleMin &&
+			theta <= cfg.beamFilterAngleMax &&
 			(i % cfg.beamDecimation == 0) &&
 			(r > cfg.rangeThreshold))
 		{
