@@ -261,11 +261,15 @@ int mb_rt(int verbose, void *modelptr,
 	vv_source = model->layer_vel_top[layer] 
 		+ model->layer_gradient[layer]*(source_depth - model->layer_depth_top[layer]);
 
+	source_angle = fmod(source_angle + 180.0, 360.0) - 180.0; /* normalize angle to +/-180*/
+
 	if (ssv_mode == MB_SSV_CORRECT && surface_vel > 0.0)
 		{
 		pp = sin(DTR*source_angle)/surface_vel;
 		vel_ratio = MIN(1.0, pp * vv_source);
-		source_angle = asin(vel_ratio) * RTD;
+		double a = asin(vel_ratio) * RTD;
+		double s = source_angle >= 0.0 ? 1.0 : -1.0;
+		source_angle = fabs(source_angle) <= 90.0 ? a : s*180.0 - a;
 		}
 	else if (ssv_mode == MB_SSV_INCORRECT && surface_vel > 0.0)
 		{
@@ -773,7 +777,8 @@ int mb_rt_line(int verbose, int *error)
 		}
 	else
 		{
-		theta = theta + M_PI;
+		theta = M_PI - theta;
+		//theta = theta + M_PI;
 		zf = model->layer_depth_top[layer];
 		}
 	xvel = model->layer_vel_top[layer] * sin(theta);
