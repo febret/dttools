@@ -28,6 +28,7 @@
  *********************************************************************************************************************/ 
 #define _CRT_SECURE_NO_WARNINGS
 #include <sstream>
+#include <time.h>
 
 #include "quickcfg.h"
 #include "mb_fbt.h"
@@ -75,9 +76,25 @@ vmml::mat4f poseWorldTransform;
 // Buffering
 int outputBufferSize = 8000; // Use an 8 mb buffer for writing. Size doesn't really get any speed advantage here.
 
+void loadConfig(const char* cfg);
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+inline void loadConfigInclude( const char* cfg )
+{
+	char* includeConfig = NULL;
+
+	CFG_START(cfg);
+	CFG_MAP_STRING(includeConfig);
+	CFG_END;
+	if(includeConfig != NULL) loadConfig(includeConfig);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void loadConfig(const char* cfg)
 {
+	// check for an include
+	loadConfigInclude(cfg);
+
 	printf("loading config %s...\n", cfg);
 	CFG_START(cfg);
 
@@ -107,39 +124,98 @@ void loadConfig(const char* cfg)
 		CFG_MAP_FLOAT_ARRAY(poseTransform, i);
 	}
 
-	CFG_MAP_FLOAT(rangeThreshold);
-
 	CFG_MAP_STRING(svpFile);
 	CFG_MAP_FLOAT(sensorSoundVelocity);
 
+	CFG_MAP_FLOAT(rangeThreshold);
 	CFG_MAP_FLOAT(beamFilterAngleMin);
 	CFG_MAP_FLOAT(beamFilterAngleMax);
 
 	CFG_MAP_STRING(outputFile);
 	CFG_MAP_STRING(outputFormat);
-
 	CFG_MAP_INT(outputBufferSize);
 
 	CFG_END;
 
 }
 
+// Records the configuration used for this processing set in a file with the output file name + ".cfg"
+void recordConfig( const char* cfgFile, char* argv[] ) 
+{
+	char datestr[64];
+	char timestr[64];
+
+	// some preliminaries
+	_strdate(datestr);
+	_strtime(timestr);
+
+	CFG_REC_START(outputFile); // record config with same base name as output file
+	CFG_REC_COMMENT_FMT("Configuration used to create %s", outputFile);
+	char cmdline[512] = ""; for (int i=0,c=0; argv[i] && c < 511; i++) c += sprintf(cmdline+c, " %s", argv[i]); // hope we don't overflow cmdline...
+	CFG_REC_COMMENT_FMT("Command line: %s", cmdline);
+	CFG_REC_COMMENT_FMT("Base configuration file: %s", cfgFile);
+	CFG_REC_COMMENT_FMT("Processed on %s at %s", datestr, timestr);
+	CFG_REC_COMMENT("using dtrt executable compiled on " __DATE__ " at " __TIME__ );
+
+	// the following should match what's read in loadConfig()
+	CFG_REC_SEC;
+	CFG_REC_STRING(inputDeltaTFormat);
+	CFG_REC_STRING(inputPoseFormat);
+
+	CFG_REC_SEC;
+	CFG_REC_INT(inputFiles);
+	for(int i = 0; i < inputFiles; i++)
+	{
+		CFG_REC_STRING_ARRAY(deltatFile, i);
+		CFG_REC_STRING_ARRAY(poseFile, i);
+		CFG_REC_INT_ARRAY(diveTag, i);
+	}
+
+	CFG_REC_SEC;
+	CFG_REC_INT(pingDecimation);
+	CFG_REC_INT(beamDecimation);
+
+	CFG_REC_SEC;
+	for(int i = 0; i < 3; i++) CFG_REC_FLOAT_ARRAY(sensorPosition, i);
+	CFG_REC_SEC;
+	for(int i = 0; i < 3; i++) CFG_REC_FLOAT_ARRAY(sensorRotation, i);
+	CFG_REC_SEC;
+	for(int i = 0; i < 3; i++) CFG_REC_FLOAT_ARRAY(poseTranslation, i);
+
+	CFG_REC_SEC;
+	for(int i = 0; i < 9; i++)
+	{
+		CFG_REC_FLOAT_ARRAY(poseTransform, i);
+	}
+
+	CFG_REC_SEC;
+	CFG_REC_STRING(svpFile);
+	CFG_REC_FLOAT(sensorSoundVelocity);
+
+	CFG_REC_SEC;
+	CFG_REC_FLOAT(rangeThreshold);
+	CFG_REC_FLOAT(beamFilterAngleMin);
+	CFG_REC_FLOAT(beamFilterAngleMax);
+
+	CFG_REC_SEC;
+	CFG_REC_STRING(outputFile);
+	CFG_REC_STRING(outputFormat);
+	CFG_REC_INT(outputBufferSize);
+
+	CFG_REC_END;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void setup(const char* cfgFile)
 {
-	char* includeConfig = NULL;
 
 	memset(poseTransform, 0, sizeof(float) * 9);
 	poseTransform[0] = 1;
 	poseTransform[4] = 1;
 	poseTransform[8] = 1;
 
-	CFG_START(cfgFile);
-	CFG_MAP_STRING(includeConfig);
-	CFG_END;
-
-	if(includeConfig != NULL) loadConfig(includeConfig);
 	loadConfig(cfgFile);
+
 
         beamDecimation = beamDecimation < 1 ? 1 : beamDecimation;
         pingDecimation = pingDecimation < 1 ? 1 : pingDecimation;
@@ -232,14 +308,19 @@ void processDive(const char* deltaTFilename, const char* poseFilename, int diveT
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char* argv[])
 {
-	if (!argv[1])
+	if (argc < 2)
 	{
 		fprintf(stderr, "%s: no configuration file specified.\n", argv[0]);
 		return -1;
 	}
 
+	char* cfgFile = argv[1];
+
 	// Load the tool configuration.
-	setup(argv[1]);
+	setup(cfgFile);
+
+	// record the tool configuration alongside the data
+	recordConfig(cfgFile, argv);
 
 	PointCloud pointCloud;
 	pointCloud.getPoints().reserve(outputBufferSize / sizeof(SonarPoint));
@@ -262,5 +343,3 @@ int main(int argc, char* argv[])
 
     return 0;
 }
-
-
