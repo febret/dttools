@@ -38,13 +38,14 @@ struct RaytracerConfiguration
 		beamCount(480),
 		beamAngleStart(-60.0),
 		beamAngleEnd(60.0),
-		//beamAngleOffset(0),
 		rangeThreshold(10),
 		pingDecimation(1),
 		beamDecimation(1),
 		sensorSoundVelocity(1500),
 		sensorTransform(vmml::mat4d::IDENTITY),
-		worldTransform(vmml::mat4d::IDENTITY)
+		worldTransform(vmml::mat4d::IDENTITY),
+		vehiclePositionMin(vmml::vec3f::ZERO),
+		vehiclePositionMax(vmml::vec3f::ZERO)
 		{}
 
 	void setSensorTransform(const vmml::vec3d& sensorPosition, const vmml::vec3d& sensorRotation)
@@ -77,6 +78,9 @@ struct RaytracerConfiguration
 	// Data processing config
 	int pingDecimation;
 	int beamDecimation;
+
+	vmml::vec3f vehiclePositionMin;
+	vmml::vec3f vehiclePositionMax;
 
 	// Raytracing data.
 	SoundVelocityProfile svp;

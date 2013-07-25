@@ -457,6 +457,14 @@ void PointCloud::addPing(const RangeDataPing& ping, const RaytracerConfiguration
 
 	stats.totalPoints += cfg.beamCount;
 
+	// Filter by vehicle pose
+	if (!(cfg.vehiclePositionMin[0] <= ping.position[0] && ping.position[0] <= cfg.vehiclePositionMax[0] &&
+		cfg.vehiclePositionMin[1] <= ping.position[1] && ping.position[1] <= cfg.vehiclePositionMax[1] &&
+		cfg.vehiclePositionMin[2] <= ping.position[2] && ping.position[2] <= cfg.vehiclePositionMax[2]))
+	{
+		return;
+	}
+
     // Calculate the vehicle body to world matrix
 	vmml::mat4d bodyToWorld = vmml::mat4d::IDENTITY;
 
