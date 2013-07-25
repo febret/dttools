@@ -28,6 +28,7 @@
  *********************************************************************************************************************/ 
 #define _CRT_SECURE_NO_WARNINGS
 #include <sstream>
+#include <limits>
 #include <time.h>
 
 #include "quickcfg.h"
@@ -44,7 +45,7 @@ int inputFiles;
 char* deltatFile[MAX_FILES];
 char* poseFile[MAX_FILES];
 int   diveTag[MAX_FILES];
-int pingDecimation;
+
 char* outputFile = "output.csv";
 char* outputFormat = "CSVPoints";
 RaytracerConfiguration raytracerCfg;
@@ -63,10 +64,15 @@ double rangeThreshold = 10;
 
 // Data processing config
 int beamDecimation;
+int pingDecimation;
 
 // Beam angle filtering
 float beamFilterAngleMin = -180;
 float beamFilterAngleMax = 180;
+
+// Vehicle pose filtering
+vmml::vec3f vehiclePositionMin;
+vmml::vec3f vehiclePositionMax;
 
 // Pose transformations
 vmml::vec3f poseTranslation = vmml::vec3f::ZERO;
@@ -130,6 +136,12 @@ void loadConfig(const char* cfg)
 	CFG_MAP_FLOAT(rangeThreshold);
 	CFG_MAP_FLOAT(beamFilterAngleMin);
 	CFG_MAP_FLOAT(beamFilterAngleMax);
+
+	for(int i = 0; i < 3; i++)
+	{
+		CFG_MAP_FLOAT_ARRAY(vehiclePositionMin, i);
+		CFG_MAP_FLOAT_ARRAY(vehiclePositionMax, i);
+	}
 
 	CFG_MAP_STRING(outputFile);
 	CFG_MAP_STRING(outputFormat);
@@ -198,6 +210,11 @@ void recordConfig( const char* cfgFile, char* argv[] )
 	CFG_REC_FLOAT(beamFilterAngleMax);
 
 	CFG_REC_SEC;
+	for(int i = 0; i < 3; i++) CFG_REC_FLOAT_ARRAY(vehiclePositionMin, i);
+	CFG_REC_SEC;
+	for(int i = 0; i < 3; i++) CFG_REC_FLOAT_ARRAY(vehiclePositionMax, i);
+
+	CFG_REC_SEC;
 	CFG_REC_STRING(outputFile);
 	CFG_REC_STRING(outputFormat);
 	CFG_REC_INT(outputBufferSize);
@@ -214,6 +231,9 @@ void setup(const char* cfgFile)
 	poseTransform[4] = 1;
 	poseTransform[8] = 1;
 
+	vehiclePositionMin = std::numeric_limits<float>::lowest();
+	vehiclePositionMax = std::numeric_limits<float>::max();
+
 	loadConfig(cfgFile);
 
 
@@ -229,6 +249,8 @@ void setup(const char* cfgFile)
 	raytracerCfg.beamFilterAngleMin = beamFilterAngleMin;
 	raytracerCfg.rangeThreshold = rangeThreshold;
 	raytracerCfg.beamDecimation = beamDecimation;
+	raytracerCfg.vehiclePositionMin = vehiclePositionMin;
+	raytracerCfg.vehiclePositionMax = vehiclePositionMax;
 	raytracerCfg.sensorSoundVelocity = sensorSoundVelocity;
 
 	fprintf(stderr, "Sound velocity set in DeltaT sensor: %f\n", sensorSoundVelocity);
@@ -287,7 +309,7 @@ void processDive(const char* deltaTFilename, const char* poseFilename, int diveT
 
 		// Generate a point cloud for this ping and store it in the point cloud manager by the generator.
 		pointCloud.addPing(ping, cfg, pingStats);
-		
+
 		if(pointCloud.getPoints().size() >= outputBufferSize / sizeof(SonarPoint))
 		{
 			pointCloud.flush();
