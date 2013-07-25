@@ -64,4 +64,21 @@
 
 #define CFG_END	} fclose(__cfg);
 
+#define CFG_REC_SEC					  fprintf(__cfg, "\n");
+#define CFG_REC_COMMENT(str)		  fprintf(__cfg, "# %s\n", str);
+#define CFG_REC_COMMENT_FMT(fmt, ...) fprintf(__cfg, "# "); fprintf(__cfg, fmt, __VA_ARGS__); fprintf(__cfg, "\n");
+#define CFG_REC_STRING(name)		  fprintf(__cfg, "%s %s\n", #name, name);
+#define CFG_REC_STRING_ARRAY(name, i) fprintf(__cfg, "%s[%d] %s\n", #name, i, name[i]);
+#define CFG_REC_INT(name)			  fprintf(__cfg, "%s %d\n", #name, name);
+#define CFG_REC_INT_ARRAY(name, i) 	  fprintf(__cfg, "%s[%d] %d\n", #name, i, name[i]);
+#define CFG_REC_FLOAT(name)			  fprintf(__cfg, "%s %g\n", #name, name);
+#define CFG_REC_FLOAT_ARRAY(name, i)  fprintf(__cfg, "%s[%d] %g\n", #name, i, name[i]);
+
+#define CFG_REC_START(file) \
+	char __path[256]; \
+	strncpy(__path, file, 252); strncat(__path, ".cfg", 256); \
+	FILE* __cfg = fopen(__path, "w"); 
+
+#define CFG_REC_END fclose(__cfg);
+
 #endif
