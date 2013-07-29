@@ -38,6 +38,7 @@
 #include "DeltaTData.h"
 #include "PoseData.h"
 
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Tool configuration parameters.
 static const int MAX_FILES = 128;
@@ -154,20 +155,19 @@ void loadConfig(const char* cfg)
 // Records the configuration used for this processing set in a file with the output file name + ".cfg"
 void recordConfig( const char* cfgFile, char* argv[] ) 
 {
-	char datestr[64];
 	char timestr[64];
 
 	// some preliminaries
-	_strdate(datestr);
-	_strtime(timestr);
+	time_t now = time(NULL);
+	strftime(timestr, 64, "%F %T UTC", gmtime(&now));
 
 	CFG_REC_START(outputFile); // record config with same base name as output file
 	CFG_REC_COMMENT_FMT("Configuration used to create %s", outputFile);
 	char cmdline[512] = ""; for (int i=0,c=0; argv[i] && c < 511; i++) c += sprintf(cmdline+c, " %s", argv[i]); // hope we don't overflow cmdline...
 	CFG_REC_COMMENT_FMT("Command line: %s", cmdline);
 	CFG_REC_COMMENT_FMT("Base configuration file: %s", cfgFile);
-	CFG_REC_COMMENT_FMT("Processed on %s at %s", datestr, timestr);
-	CFG_REC_COMMENT("using dtrt executable compiled on " __DATE__ " at " __TIME__ );
+	CFG_REC_COMMENT_FMT("Processed at %s.", timestr);
+	CFG_REC_COMMENT("using dtrt executable compiled on " __DATE__ " at " __TIME__ ".");
 
 	// the following should match what's read in loadConfig()
 	CFG_REC_SEC;
@@ -231,8 +231,8 @@ void setup(const char* cfgFile)
 	poseTransform[4] = 1;
 	poseTransform[8] = 1;
 
-	vehiclePositionMin = std::numeric_limits<float>::lowest();
-	vehiclePositionMax = std::numeric_limits<float>::max();
+	vehiclePositionMin = -std::numeric_limits<float>::max();
+	vehiclePositionMax =  std::numeric_limits<float>::max();
 
 	loadConfig(cfgFile);
 
@@ -296,16 +296,24 @@ void processDive(const char* deltaTFilename, const char* poseFilename, int diveT
 
 	PingStats pingStats;
 
-	int j = 0;
-	for(int i = 0; i < deltaTData.getLength(); i++)
+	int poseIdx = 0; // pose data index
+	int pingIdx = 0; // deltaT data index
+	
+	// advance ping index to first pose data (assumes invalid pose data has been cropped)
+	RangeDataPose& firstPose = poseData.getPose(poseIdx);
+	while (pingIdx < deltaTData.getLength() && deltaTData.getPing(pingIdx).t < firstPose.t) pingIdx++;
+	if (pingIdx > 0)
+		fprintf(stderr, "First %d sonar pings have no associated pose data, skipping...\n", pingIdx);
+
+	for(; pingIdx < deltaTData.getLength(); pingIdx++)
 	{
 		// Merge pose and range data.
-		RangeDataPing& ping = deltaTData.getPing(i);
-		while(j < poseData.getLength() && poseData.getPose(j).t < ping.t) j++;
+		RangeDataPing& ping = deltaTData.getPing(pingIdx);
+		while(poseIdx < poseData.getLength() && poseData.getPose(poseIdx).t < ping.t) poseIdx++;
 
 		// Interpolate?
-		ping.position = poseData.getPose(j).position;
-		ping.orientation = poseData.getPose(j).orientation;
+		ping.position = poseData.getPose(poseIdx).position;
+		ping.orientation = poseData.getPose(poseIdx).orientation;
 
 		// Generate a point cloud for this ping and store it in the point cloud manager by the generator.
 		pointCloud.addPing(ping, cfg, pingStats);
