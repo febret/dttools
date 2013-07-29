@@ -59,7 +59,7 @@
 	_getcwd(__path, 256); strcat(__path, "/"); strcat(__path, file); \
 	FILE* __cfg = fopen(__path, "r"); \
 	char __str[256]; \
-	while(fgets(__str, 256, __cfg)) { __str[strlen(__str) - 1] = 0;
+	while(fgets(__str, 256, __cfg)) { char* __end =__str+strlen(__str)-1; if (*(__end-1) == '\r') __end--; *__end='\0';
 
 
 #define CFG_END	} fclose(__cfg);
