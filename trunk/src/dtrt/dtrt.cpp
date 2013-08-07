@@ -286,10 +286,10 @@ void processDive(const char* deltaTFilename, const char* poseFilename, int diveT
 	DeltaTData deltaTData;
 	PoseData poseData;
 
-	//printf("reading %s...\n", deltaTFilename);
+	printf("reading %s...\n", deltaTFilename);
 	deltaTData.read(deltaTFilename, FileFormat::fromString(inputDeltaTFormat), pingDecimation);
 
-	//printf("reading %s...\n", poseFilename);
+	printf("reading %s...\n", poseFilename);
 	poseData.read(poseFilename, FileFormat::fromString(inputPoseFormat));
 
 	printf("processing %d pings...\n", deltaTData.getLength());
@@ -303,10 +303,17 @@ void processDive(const char* deltaTFilename, const char* poseFilename, int diveT
 	RangeDataPose& firstPose = poseData.getPose(poseIdx);
 	while (pingIdx < deltaTData.getLength() && deltaTData.getPing(pingIdx).t < firstPose.t) pingIdx++;
 	if (pingIdx > 0)
-		fprintf(stderr, "First %d sonar pings have no associated pose data, skipping...\n", pingIdx);
+		printf("First %d sonar pings have no associated pose data, skipping...\n", pingIdx);
+
+	printf("  0%%"); fflush(stdout);
 
 	for(; pingIdx < deltaTData.getLength(); pingIdx++)
 	{
+	  if ( pingIdx % (deltaTData.getLength() / 100) == 0)
+	    {
+	      printf("\b\b\b\b%3d%%",pingIdx*100/deltaTData.getLength());
+	      fflush(stdout);
+	    }
 		// Merge pose and range data.
 		RangeDataPing& ping = deltaTData.getPing(pingIdx);
 		while(poseIdx < poseData.getLength() && poseData.getPose(poseIdx).t < ping.t) poseIdx++;
@@ -323,12 +330,13 @@ void processDive(const char* deltaTFilename, const char* poseFilename, int diveT
 			pointCloud.flush();
 		}
 	}
+	printf("\b\b\b\b100%%\n");
 
-	int passedPerc = pingStats.passedPoints * 100 / pingStats.totalPoints;
-	int addedPerc = pingStats.addedPoints * 100 / pingStats.passedPoints;
-	int failedPerc = pingStats.raytraceFailures * 100 / pingStats.passedPoints;
+	float passedPerc = pingStats.passedPoints * 100.0 / pingStats.totalPoints;
+	float addedPerc = pingStats.passedPoints > 0 ? pingStats.addedPoints * 100.0 / pingStats.passedPoints : 100.0;
+	float failedPerc = pingStats.passedPoints > 0 ? pingStats.raytraceFailures * 100.0 / pingStats.passedPoints : 0.0;
 
-	printf("Points Total: %dk Passed: %dk(%d%% of total) Added: %dk(%d%% of passed) Raytrace Failures: %dk(%d%% of passed)\n",
+	printf("Points Total: %dk Passed: %dk(%.0f%% of total) Added: %dk(%.0f%% of passed) Raytrace Failures: %dk(%.0f%% of passed)\n",
 		pingStats.totalPoints / 1000, 
 		pingStats.passedPoints / 1000, passedPerc,
 		pingStats.addedPoints / 1000, addedPerc,
