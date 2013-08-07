@@ -59,7 +59,7 @@ int Utils::extractValues(const char* str, double* values)
 	int size = 0;
 	char* arg = (char*)str;
 	char* tok = NULL;
-	if (str[0] == '#') return size;
+	if (str[0] == '#' || str[0] == '%') return size;
 	while((tok = strtok(arg, ", ")) != NULL)
 	{
 		arg = NULL;
@@ -111,7 +111,17 @@ void* Utils::loadFile(const char* filename, int start, int size)
 int Utils::countStringLines(const char* str)
 {
 	int lines = 0, i = 0;
-	while(str[i] != '\0') if(str[i++] == '\n') lines++;
-    return lines;
+	bool linestart = true;
+	while(str[i] != '\0') 
+	    switch (str[i++])
+	      {
+	      case '\n': 
+		lines++; linestart = true; break;
+	      case '#': // don't count comment lines 
+	      case '%':
+		if (linestart) lines--;
+	      default: linestart = false;
+	      }
+	return lines;
 }
 
