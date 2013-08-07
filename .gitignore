@@ -1,4 +1,7 @@
+*~
 Makefile
 *.cmake
 CMakeFiles
 CMakeCache.txt
+bin/
+lib/
