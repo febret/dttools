@@ -92,6 +92,29 @@ public:
 		return "InvalidFormat";
 	}
 
+	static const char* toFileExtension( FileFormat::Enum value)
+	{
+		switch(value)
+		{
+			case PLY: return "ply";
+			case DeltaT83P: return "d3p";
+			case CSVENDURANCEDeltaT: return "csv";
+			case CSVENDURANCEPose: return "csv";
+			case CSVPoints: return "csv";
+			case CSVPoints2: return "csv";
+			case CSVPointsPose: return "csv";
+			case XYZPointsWithNormals: return "xyz";
+			//case XYZBinaryPointsWithNormals: return "XYZBinaryPointsWithNormals";
+			case CSVPointsWithQuality: return "csv";
+			case VTKStructuredPointsASCII: return "vtk";
+			case CSVPointsWithBeamInfo: return "csv";
+			case CSVPointsWithBeamPoseInfo: return "csv";
+			case BinaryPointsWithBeamInfo: return "xyzb";
+		}
+		fprintf(stderr, "Invalid file format code: %d\n", value);
+		return "InvalidFormat";
+	}
+    
 	static Enum fromString(const char* value) 
 	{
 		if(!strcmp(value, "PLY")) return PLY;
