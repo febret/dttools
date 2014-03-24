@@ -88,6 +88,7 @@ void PointCloud::read(const std::string& filename, FileFormat::Enum format)
 ///////////////////////////////////////////////////////////////////////////////
 bool PointCloud::endOfFile()
 {
+	DTT_ASSERT(myFile != NULL);
 	return feof(myFile) || (myReadLength != 0 && (myFileOffset - myReadOffset) >= myReadLength) || myReadDone;
 }
 
@@ -342,6 +343,11 @@ void PointCloud::openOutputFile(const std::string& filename, FileFormat::Enum fo
 	{
 		myFile = fopen(filename.c_str(), append ? "a" : "w");
 	}
+    if(myFile == NULL)
+    {
+        printf("PointCloud::openOutputFile Could not open file %s\n", filename.c_str());
+        DTT_ASSERT(false);
+    }
 	myFormat = format;
 }
 
@@ -381,6 +387,11 @@ void PointCloud::openInputFile(const std::string& filename, FileFormat::Enum for
 
 	myFile = fopen(filename.c_str(), "rb");
 	myFormat = format;
+    if(myFile == NULL)
+    {
+        printf("PointCloud::openOutputFile Could not open file %s\n", filename.c_str());
+        DTT_ASSERT(false);
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
