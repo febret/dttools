@@ -21,8 +21,10 @@ ELSEIF(CMAKE_GENERATOR STREQUAL "Visual Studio 10")
 ELSEIF(CMAKE_GENERATOR STREQUAL "Visual Studio 10 Win64")
 	SET(ARCH "win-x64")
 	SET(TOOL "vs10")
-	
-ENDIF(CMAKE_GENERATOR STREQUAL "Visual Studio 9 2008")
+ELSE()
+	SET(ARCH "linux")
+	SET(TOOL "gcc")
+ENDIF()
 
 #######################################################################################################################
 # Setup output Directories 
@@ -55,7 +57,7 @@ ADD_SUBDIRECTORY(dtmerge)
 ADD_SUBDIRECTORY(dtrt)
 #ADD_SUBDIRECTORY(dtoccup)
 #ADD_SUBDIRECTORY(dtsample)
-#ADD_SUBDIRECTORY(dtpoisson)
+ADD_SUBDIRECTORY(dtpoisson)
 
 set(DTTOOLS_USE_MPI false CACHE BOOL "enable building of MPI tools")
 if(DTTOOLS_USE_MPI)
