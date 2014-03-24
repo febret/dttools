@@ -1,4 +1,7 @@
 SET(CMAKE_BUILD_TYPE DEBUG)
+if(NOT WIN32)
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
+endif()
 SET(SOURCES
 	Factor.cpp
 	Geometry.cpp

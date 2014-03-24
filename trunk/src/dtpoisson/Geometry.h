@@ -181,7 +181,7 @@ public:
 	std::vector<TriangleIndex> triangles;
 	int oocPointIndex,triangleIndex;
 public:
-	CoredVectorMeshData::CoredVectorMeshData(void);
+	CoredVectorMeshData(void);
 
 	void resetIterator(void);
 

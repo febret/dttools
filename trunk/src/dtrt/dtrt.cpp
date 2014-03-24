@@ -47,7 +47,8 @@ char* deltatFile[MAX_FILES];
 char* poseFile[MAX_FILES];
 int   diveTag[MAX_FILES];
 
-char* outputFile = "output.csv";
+char* outputFile = "output";
+char outputFullFilename[MAX_FILES];
 char* outputFormat = "CSVPoints";
 RaytracerConfiguration raytracerCfg;
 
@@ -149,7 +150,8 @@ void loadConfig(const char* cfg)
 	CFG_MAP_INT(outputBufferSize);
 
 	CFG_END;
-
+    
+    sprintf(outputFullFilename, "%s.%s", outputFile, FileFormat::toFileExtension(FileFormat::fromString(outputFormat)));
 }
 
 // Records the configuration used for this processing set in a file with the output file name + ".cfg"
@@ -161,8 +163,8 @@ void recordConfig( const char* cfgFile, char* argv[] )
 	time_t now = time(NULL);
 	strftime(timestr, 64, "%F %T UTC", gmtime(&now));
 
-	CFG_REC_START(outputFile); // record config with same base name as output file
-	CFG_REC_COMMENT_FMT("Configuration used to create %s", outputFile);
+	CFG_REC_START(outputFullFilename); // record config with same base name as output file
+	CFG_REC_COMMENT_FMT("Configuration used to create %s", outputFullFilename);
 	char cmdline[512] = ""; for (int i=0,c=0; argv[i] && c < 511; i++) c += sprintf(cmdline+c, " %s", argv[i]); // hope we don't overflow cmdline...
 	CFG_REC_COMMENT_FMT("Command line: %s", cmdline);
 	CFG_REC_COMMENT_FMT("Base configuration file: %s", cfgFile);
@@ -363,7 +365,7 @@ int main(int argc, char* argv[])
 	PointCloud pointCloud;
 	pointCloud.getPoints().reserve(outputBufferSize / sizeof(SonarPoint));
 
-	pointCloud.openOutputFile(outputFile, FileFormat::fromString(outputFormat));
+	pointCloud.openOutputFile(outputFullFilename, FileFormat::fromString(outputFormat));
 
 	int lastDiveTag = diveTag[0];
 	for(int i = 0; i < inputFiles; i++)
