@@ -334,9 +334,9 @@ void processDive(const char* deltaTFilename, const char* poseFilename, int diveT
 	}
 	printf("\b\b\b\b100%%\n");
 
-	float passedPerc = pingStats.passedPoints * 100.0 / pingStats.totalPoints;
-	float addedPerc = pingStats.passedPoints > 0 ? pingStats.addedPoints * 100.0 / pingStats.passedPoints : 100.0;
-	float failedPerc = pingStats.passedPoints > 0 ? pingStats.raytraceFailures * 100.0 / pingStats.passedPoints : 0.0;
+	float passedPerc = pingStats.passedPoints * 100.0f / pingStats.totalPoints;
+	float addedPerc = pingStats.passedPoints > 0 ? pingStats.addedPoints * 100.0f / pingStats.passedPoints : 100.0f;
+	float failedPerc = pingStats.passedPoints > 0 ? pingStats.raytraceFailures * 100.0f / pingStats.passedPoints : 0.0f;
 
 	printf("Points Total: %dk Passed: %dk(%.0f%% of total) Added: %dk(%.0f%% of passed) Raytrace Failures: %dk(%.0f%% of passed)\n",
 		pingStats.totalPoints / 1000, 
