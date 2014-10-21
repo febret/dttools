@@ -35,6 +35,9 @@
 #include <float.h>
 #include <stdarg.h>
 
+#include "quickcfg.h"
+#include "PointCloud.h"
+
 // VCG lib stuff (used for mesh cleanup)
 #include <vcg/simplex/vertex/base.h>
 #include <vcg/simplex/face/base.h>
@@ -43,8 +46,6 @@
 #include <vcg/complex/trimesh/base.h>
 #include <vcg/complex/trimesh/clean.h>
 
-#include "quickcfg.h"
-#include "PointCloud.h"
 
 #include "Time.h"
 #include "MarchingCubes.h"
@@ -199,7 +200,7 @@ void cleanMesh(CoredVectorMeshData* mesh)
 	}*/
 
 	fprintf(stderr, "Cleaning up surface (area percentage: %d)...\n", cleanupPercentage);
-	float minCC = cleanupPercentage;
+	float minCC = (float)cleanupPercentage;
 	std::pair<int,int> delInfo= vcg::tri::Clean<MyMesh>::RemoveSmallConnectedComponentsDiameter(vcgMesh,minCC);
 	fprintf(stderr, "Removed %2 connected components out of %1", delInfo.second, delInfo.first); 		
 

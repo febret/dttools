@@ -40,8 +40,14 @@ using std::isnan;
 #define _finite finite
 #endif
 
+#include "mb_fbt.h"
+
+#include "PointCloud.h"
+#include "Utils.h"
 
 // VCG lib stuff (used for normal computation)
+// VS2013 - this needs to be defined AFTER std lib includes since vcg redefines
+// static_assert
 #include <vcg/simplex/vertex/base.h>
 #include <vcg/simplex/face/base.h>
 #include <vcg/simplex/face/pos.h>
@@ -49,11 +55,6 @@ using std::isnan;
 #include <vcg/complex/trimesh/base.h>
 #include <vcg/complex/trimesh/update/normal.h>
 #include <vcg/space/normal_extrapolation.h>
-
-#include "mb_fbt.h"
-
-#include "PointCloud.h"
-#include "Utils.h"
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -446,8 +447,8 @@ void PointCloud::updateBounds(const SonarPoint& pt)
 {
 	for(int j = 0; j < 3; j++)
 	{
-		if(pt.position[j] < myMinBounds[j]) myMinBounds[j] = pt.position[j];
-		if(pt.position[j] > myMaxBounds[j]) myMaxBounds[j] = pt.position[j];
+        if(pt.position[j] < myMinBounds[j]) myMinBounds[j] = (float)pt.position[j];
+        if(pt.position[j] > myMaxBounds[j]) myMaxBounds[j] = (float)pt.position[j];
 
 		//if(pt.sourcePosition[j] < myMinBounds[j]) myMinBounds[j] = pt.sourcePosition[j];
 		//if(pt.sourcePosition[j] > myMaxBounds[j]) myMaxBounds[j] = pt.sourcePosition[j];
@@ -527,8 +528,8 @@ void PointCloud::addPing(const RangeDataPing& ping, const RaytracerConfiguration
 	
 				pt.t = ping.t;
 				//pt.diveTag = ping.diveTag;
-				pt.range = r;
-				pt.angle = theta;
+				pt.range = (float)r;
+				pt.angle = (float)theta;
 				pt.sourcePosition = ping.position;
 				pt.sourceOrientation = ping.orientation;
 	
@@ -558,10 +559,10 @@ void PointCloud::appendPoints(PointCloud& points)
 	// Update bounds
 	for(int j = 0; j < 3; j++)
 	{
-		if(minb[j] < myMinBounds[j]) myMinBounds[j] = minb[j];
-		if(minb[j] > myMaxBounds[j]) myMaxBounds[j] = minb[j];
-		if(maxb[j] < myMinBounds[j]) myMinBounds[j] = maxb[j];
-		if(maxb[j] > myMaxBounds[j]) myMaxBounds[j] = maxb[j];
+        if((float)minb[j] < myMinBounds[j]) myMinBounds[j] = (float)minb[j];
+        if((float)minb[j] > myMaxBounds[j]) myMaxBounds[j] = (float)minb[j];
+        if((float)maxb[j] < myMinBounds[j]) myMinBounds[j] = (float)maxb[j];
+        if((float)maxb[j] > myMaxBounds[j]) myMaxBounds[j] = (float)maxb[j];
 	}
 }
 
@@ -583,12 +584,12 @@ void PointCloud::computeNormals()
 	std::vector<MyVertex> vertices;
 	vertices.reserve(myData.size());
 
-	for(int i = 0; i < myData.size(); i++)
+	for(unsigned int i = 0; i < myData.size(); i++)
 	{
 		MyVertex v;
-		v.P().X() = myData[i].position[0];
-		v.P().Y() = myData[i].position[1];
-		v.P().Z() = myData[i].position[2];
+        v.P().X() = (float)myData[i].position[0];
+        v.P().Y() = (float)myData[i].position[1];
+        v.P().Z() = (float)myData[i].position[2];
 
 		vertices.push_back(v);
 	}
@@ -597,7 +598,7 @@ void PointCloud::computeNormals()
 	vcg::NormalExtrapolation<std::vector<MyVertex> >::ExtrapolateNormals(vertices.begin(), vertices.end(), myNormalNeighbors);
 
 	// Copy back the normals.
-	for(int i = 0; i < myData.size(); i++)
+	for(unsigned int i = 0; i < myData.size(); i++)
 	{
 		myData[i].normal[0] = vertices[i].N().X();
 		myData[i].normal[1] = vertices[i].N().Y();
